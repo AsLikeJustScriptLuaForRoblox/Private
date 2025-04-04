@@ -1,0 +1,885 @@
+--[[
+    PurpleUI Library - Executor Compatible Version
+    A purple-themed UI library for Roblox executors
+]]
+
+local PurpleUI = {}
+PurpleUI.__index = PurpleUI
+
+-- Color palette
+PurpleUI.Colors = {
+    Background = Color3.fromRGB(40, 30, 60),
+    BackgroundLight = Color3.fromRGB(60, 45, 90),
+    Primary = Color3.fromRGB(130, 80, 220),
+    PrimaryLight = Color3.fromRGB(160, 120, 240),
+    PrimaryDark = Color3.fromRGB(100, 60, 180),
+    Text = Color3.fromRGB(240, 240, 255),
+    TextDark = Color3.fromRGB(180, 180, 200),
+    Success = Color3.fromRGB(100, 220, 120),
+    Warning = Color3.fromRGB(240, 180, 60),
+    Error = Color3.fromRGB(220, 80, 80),
+}
+
+-- Utility functions
+local function createInstance(className, properties)
+    local instance = Instance.new(className)
+    for property, value in pairs(properties) do
+        instance[property] = value
+    end
+    return instance
+end
+
+local function tween(instance, properties, duration, easingStyle, easingDirection)
+    local tweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(
+        duration or 0.3,
+        easingStyle or Enum.EasingStyle.Quad,
+        easingDirection or Enum.EasingDirection.Out
+    )
+    local tween = tweenService:Create(instance, tweenInfo, properties)
+    tween:Play()
+    return tween
+end
+
+-- Create a new UI instance (executor compatible)
+function PurpleUI.new(title, parent)
+    -- Create a ScreenGui with executor compatibility
+    local screenGui
+    if syn and syn.protect_gui then
+        screenGui = createInstance("ScreenGui", {
+            Name = "PurpleUI",
+            ResetOnSpawn = false,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        })
+        syn.protect_gui(screenGui)
+        screenGui.Parent = parent or game:GetService("CoreGui")
+    else
+        screenGui = createInstance("ScreenGui", {
+            Name = "PurpleUI",
+            Parent = parent or game:GetService("CoreGui"),
+            ResetOnSpawn = false,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        })
+    end
+    
+    -- Main frame
+    local mainFrame = createInstance("Frame", {
+        Name = "MainFrame",
+        Parent = screenGui,
+        BackgroundColor3 = PurpleUI.Colors.Background,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, -200, 0.5, -150),
+        Size = UDim2.new(0, 400, 0, 300),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+    })
+    
+    local cornerRadius = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 8),
+        Parent = mainFrame,
+    })
+    
+    -- Title bar
+    local titleBar = createInstance("Frame", {
+        Name = "TitleBar",
+        Parent = mainFrame,
+        BackgroundColor3 = PurpleUI.Colors.Primary,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
+    })
+    
+    local titleCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 8),
+        Parent = titleBar,
+    })
+    
+    local titleBottomFrame = createInstance("Frame", {
+        Name = "TitleBottomFrame",
+        Parent = titleBar,
+        BackgroundColor3 = PurpleUI.Colors.Primary,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0.5, 0),
+        Size = UDim2.new(1, 0, 0.5, 0),
+    })
+    
+    local titleLabel = createInstance("TextLabel", {
+        Name = "TitleLabel",
+        Parent = titleBar,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        Font = Enum.Font.GothamBold,
+        Text = title or "PurpleUI Window",
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local closeButton = createInstance("TextButton", {
+        Name = "CloseButton",
+        Parent = titleBar,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -30, 0, 0),
+        Size = UDim2.new(0, 30, 1, 0),
+        Font = Enum.Font.GothamBold,
+        Text = "X",
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+    })
+    
+    -- Content area
+    local contentFrame = createInstance("Frame", {
+        Name = "ContentFrame",
+        Parent = mainFrame,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 40),
+        Size = UDim2.new(1, -20, 1, -50),
+    })
+    
+    local contentScrolling = createInstance("ScrollingFrame", {
+        Name = "ContentScrolling",
+        Parent = contentFrame,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = PurpleUI.Colors.PrimaryLight,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    })
+    
+    local contentLayout = createInstance("UIListLayout", {
+        Parent = contentScrolling,
+        Padding = UDim.new(0, 10),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+    })
+    
+    -- Draggable window functionality (executor compatible)
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+        end
+    end)
+    
+    titleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Use executor-compatible input handling
+    local inputService = game:GetService("UserInputService")
+    local renderService = game:GetService("RunService")
+    
+    local inputConnection
+    inputConnection = inputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        if inputConnection then
+            inputConnection:Disconnect()
+        end
+        screenGui:Destroy()
+    end)
+    
+    local ui = setmetatable({
+        ScreenGui = screenGui,
+        MainFrame = mainFrame,
+        ContentFrame = contentScrolling,
+        Elements = {},
+        _connections = {inputConnection},
+    }, PurpleUI)
+    
+    return ui
+end
+
+-- Add a button to the UI
+function PurpleUI:AddButton(text, callback)
+    local button = createInstance("TextButton", {
+        Name = "Button_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundColor3 = PurpleUI.Colors.Primary,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 36),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+    })
+    
+    local buttonCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = button,
+    })
+    
+    -- Store connections for cleanup
+    local connections = {}
+    
+    table.insert(connections, button.MouseEnter:Connect(function()
+        tween(button, {BackgroundColor3 = PurpleUI.Colors.PrimaryLight}, 0.2)
+    end))
+    
+    table.insert(connections, button.MouseLeave:Connect(function()
+        tween(button, {BackgroundColor3 = PurpleUI.Colors.Primary}, 0.2)
+    end))
+    
+    table.insert(connections, button.MouseButton1Down:Connect(function()
+        tween(button, {BackgroundColor3 = PurpleUI.Colors.PrimaryDark}, 0.1)
+    end))
+    
+    table.insert(connections, button.MouseButton1Up:Connect(function()
+        tween(button, {BackgroundColor3 = PurpleUI.Colors.PrimaryLight}, 0.1)
+    end))
+    
+    table.insert(connections, button.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end))
+    
+    table.insert(self.Elements, {
+        Instance = button,
+        Connections = connections
+    })
+    return button
+end
+
+-- Add a toggle to the UI
+function PurpleUI:AddToggle(text, default, callback)
+    local toggleContainer = createInstance("Frame", {
+        Name = "Toggle_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 36),
+    })
+    
+    local toggleLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = toggleContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, -50, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local toggleBackground = createInstance("Frame", {
+        Name = "Background",
+        Parent = toggleContainer,
+        BackgroundColor3 = default and PurpleUI.Colors.Primary or PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(1, -40, 0.5, -10),
+        Size = UDim2.new(0, 40, 0, 20),
+    })
+    
+    local toggleCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = toggleBackground,
+    })
+    
+    local toggleIndicator = createInstance("Frame", {
+        Name = "Indicator",
+        Parent = toggleBackground,
+        BackgroundColor3 = PurpleUI.Colors.Text,
+        BorderSizePixel = 0,
+        Position = UDim2.new(default and 0.5 or 0, default and 0 or 2, 0.5, -8),
+        Size = UDim2.new(0, 16, 0, 16),
+    })
+    
+    local indicatorCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = toggleIndicator,
+    })
+    
+    local toggle = {
+        Container = toggleContainer,
+        Background = toggleBackground,
+        Indicator = toggleIndicator,
+        Value = default or false,
+        _connections = {},
+    }
+    
+    local function updateToggle()
+        if toggle.Value then
+            tween(toggleBackground, {BackgroundColor3 = PurpleUI.Colors.Primary}, 0.2)
+            tween(toggleIndicator, {Position = UDim2.new(0.5, 0, 0.5, -8)}, 0.2)
+        else
+            tween(toggleBackground, {BackgroundColor3 = PurpleUI.Colors.BackgroundLight}, 0.2)
+            tween(toggleIndicator, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2)
+        end
+        
+        if callback then
+            callback(toggle.Value)
+        end
+    end
+    
+    table.insert(toggle._connections, toggleBackground.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            toggle.Value = not toggle.Value
+            updateToggle()
+        end
+    end))
+    
+    table.insert(self.Elements, {
+        Instance = toggleContainer,
+        Object = toggle,
+        Connections = toggle._connections
+    })
+    return toggle
+end
+
+-- Add a slider to the UI
+function PurpleUI:AddSlider(text, min, max, default, callback)
+    min = min or 0
+    max = max or 100
+    default = default or min
+    
+    local sliderContainer = createInstance("Frame", {
+        Name = "Slider_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 50),
+    })
+    
+    local sliderLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = sliderContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local sliderValueLabel = createInstance("TextLabel", {
+        Name = "Value",
+        Parent = sliderContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -40, 0, 0),
+        Size = UDim2.new(0, 40, 0, 20),
+        Font = Enum.Font.Gotham,
+        Text = tostring(default),
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Right,
+    })
+    
+    local sliderBackground = createInstance("Frame", {
+        Name = "Background",
+        Parent = sliderContainer,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, 10),
+    })
+    
+    local backgroundCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = sliderBackground,
+    })
+    
+    local sliderFill = createInstance("Frame", {
+        Name = "Fill",
+        Parent = sliderBackground,
+        BackgroundColor3 = PurpleUI.Colors.Primary,
+        BorderSizePixel = 0,
+        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+    })
+    
+    local fillCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = sliderFill,
+    })
+    
+    local sliderButton = createInstance("TextButton", {
+        Name = "Button",
+        Parent = sliderBackground,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Text = "",
+    })
+    
+    local slider = {
+        Container = sliderContainer,
+        Background = sliderBackground,
+        Fill = sliderFill,
+        Value = default,
+        Min = min,
+        Max = max,
+        _connections = {},
+    }
+    
+    local function updateSlider(value)
+        value = math.clamp(value, min, max)
+        slider.Value = value
+        sliderValueLabel.Text = tostring(math.floor(value))
+        sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+        
+        if callback then
+            callback(value)
+        end
+    end
+    
+    table.insert(slider._connections, sliderButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local connection
+            connection = game:GetService("RunService").RenderStepped:Connect(function()
+                local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                local relativePos = mousePos.X - sliderBackground.AbsolutePosition.X
+                local percentage = math.clamp(relativePos / sliderBackground.AbsoluteSize.X, 0, 1)
+                local value = min + (max - min) * percentage
+                updateSlider(value)
+            end)
+            
+            table.insert(slider._connections, game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if connection then
+                        connection:Disconnect()
+                    end
+                end
+            end))
+        end
+    end))
+    
+    updateSlider(default)
+    table.insert(self.Elements, {
+        Instance = sliderContainer,
+        Object = slider,
+        Connections = slider._connections
+    })
+    return slider
+end
+
+-- Add a dropdown to the UI
+function PurpleUI:AddDropdown(text, options, default, callback)
+    options = options or {}
+    default = default or options[1]
+    
+    local dropdownContainer = createInstance("Frame", {
+        Name = "Dropdown_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 60),
+        ClipsDescendants = true,
+    })
+    
+    local dropdownLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = dropdownContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local dropdownButton = createInstance("TextButton", {
+        Name = "Button",
+        Parent = dropdownContainer,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, 30),
+        Font = Enum.Font.Gotham,
+        Text = default,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+    })
+    
+    local buttonCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = dropdownButton,
+    })
+    
+    local dropdownIcon = createInstance("ImageLabel", {
+        Name = "Icon",
+        Parent = dropdownButton,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -25, 0.5, -8),
+        Size = UDim2.new(0, 16, 0, 16),
+        Image = "rbxassetid://6031091004", -- Down arrow
+        ImageColor3 = PurpleUI.Colors.Text,
+    })
+    
+    local optionsFrame = createInstance("Frame", {
+        Name = "Options",
+        Parent = dropdownContainer,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 60),
+        Size = UDim2.new(1, 0, 0, #options * 30),
+        Visible = false,
+    })
+    
+    local optionsCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = optionsFrame,
+    })
+    
+    local dropdown = {
+        Container = dropdownContainer,
+        Button = dropdownButton,
+        Options = optionsFrame,
+        Value = default,
+        IsOpen = false,
+        _connections = {},
+    }
+    
+    local function toggleDropdown()
+        dropdown.IsOpen = not dropdown.IsOpen
+        
+        if dropdown.IsOpen then
+            dropdownContainer.Size = UDim2.new(1, 0, 0, 60 + #options * 30)
+            optionsFrame.Visible = true
+            tween(dropdownIcon, {Rotation = 180}, 0.2)
+        else
+            tween(dropdownIcon, {Rotation = 0}, 0.2)
+            tween(dropdownContainer, {Size = UDim2.new(1, 0, 0, 60)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            wait(0.2)
+            optionsFrame.Visible = false
+        end
+    end
+    
+    table.insert(dropdown._connections, dropdownButton.MouseButton1Click:Connect(toggleDropdown))
+    
+    for i, option in ipairs(options) do
+        local optionButton = createInstance("TextButton", {
+            Name = "Option_" .. option,
+            Parent = optionsFrame,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 0, 0, (i - 1) * 30),
+            Size = UDim2.new(1, 0, 0, 30),
+            Font = Enum.Font.Gotham,
+            Text = option,
+            TextColor3 = PurpleUI.Colors.Text,
+            TextSize = 14,
+        })
+        
+        table.insert(dropdown._connections, optionButton.MouseEnter:Connect(function()
+            tween(optionButton, {BackgroundTransparency = 0.8, BackgroundColor3 = PurpleUI.Colors.Primary}, 0.2)
+        end))
+        
+        table.insert(dropdown._connections, optionButton.MouseLeave:Connect(function()
+            tween(optionButton, {BackgroundTransparency = 1}, 0.2)
+        end))
+        
+        table.insert(dropdown._connections, optionButton.MouseButton1Click:Connect(function()
+            dropdown.Value = option
+            dropdownButton.Text = option
+            toggleDropdown()
+            
+            if callback then
+                callback(option)
+            end
+        end))
+    end
+    
+    table.insert(self.Elements, {
+        Instance = dropdownContainer,
+        Object = dropdown,
+        Connections = dropdown._connections
+    })
+    return dropdown
+end
+
+-- Add a text input to the UI
+function PurpleUI:AddTextInput(text, placeholder, default, callback)
+    placeholder = placeholder or "Enter text..."
+    default = default or ""
+    
+    local inputContainer = createInstance("Frame", {
+        Name = "Input_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 60),
+    })
+    
+    local inputLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = inputContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 20),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local inputBox = createInstance("TextBox", {
+        Name = "Input",
+        Parent = inputContainer,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, 30),
+        Font = Enum.Font.Gotham,
+        PlaceholderText = placeholder,
+        Text = default,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        ClearTextOnFocus = false,
+    })
+    
+    local inputCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = inputBox,
+    })
+    
+    local input = {
+        Container = inputContainer,
+        Box = inputBox,
+        Value = default,
+        _connections = {},
+    }
+    
+    table.insert(input._connections, inputBox.FocusLost:Connect(function(enterPressed)
+        input.Value = inputBox.Text
+        
+        if callback then
+            callback(inputBox.Text, enterPressed)
+        end
+    end))
+    
+    table.insert(input._connections, inputBox.Focused:Connect(function()
+        tween(inputBox, {BackgroundColor3 = PurpleUI.Colors.BackgroundLight:Lerp(PurpleUI.Colors.Primary, 0.3)}, 0.2)
+    end))
+    
+    table.insert(input._connections, inputBox.FocusLost:Connect(function()
+        tween(inputBox, {BackgroundColor3 = PurpleUI.Colors.BackgroundLight}, 0.2)
+    end))
+    
+    table.insert(self.Elements, {
+        Instance = inputContainer,
+        Object = input,
+        Connections = input._connections
+    })
+    return input
+end
+
+-- Add a label to the UI
+function PurpleUI:AddLabel(text)
+    local label = createInstance("TextLabel", {
+        Name = "Label_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 30),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true,
+    })
+    
+    table.insert(self.Elements, {
+        Instance = label,
+        Connections = {}
+    })
+    return label
+end
+
+-- Add a separator to the UI
+function PurpleUI:AddSeparator()
+    local separator = createInstance("Frame", {
+        Name = "Separator",
+        Parent = self.ContentFrame,
+        BackgroundColor3 = PurpleUI.Colors.PrimaryDark,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 1),
+        Transparency = 0.5,
+    })
+    
+    table.insert(self.Elements, {
+        Instance = separator,
+        Connections = {}
+    })
+    return separator
+end
+
+-- Add a section to the UI
+function PurpleUI:AddSection(title)
+    local section = createInstance("Frame", {
+        Name = "Section_" .. title,
+        Parent = self.ContentFrame,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 30),
+    })
+    
+    local sectionCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = section,
+    })
+    
+    local sectionLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = section,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Font = Enum.Font.GothamBold,
+        Text = "  " .. title,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    table.insert(self.Elements, {
+        Instance = section,
+        Connections = {}
+    })
+    return section
+end
+
+-- Add a color picker to the UI
+function PurpleUI:AddColorPicker(text, default, callback)
+    default = default or Color3.fromRGB(255, 255, 255)
+    
+    local pickerContainer = createInstance("Frame", {
+        Name = "ColorPicker_" .. text,
+        Parent = self.ContentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 60),
+        ClipsDescendants = true,
+    })
+    
+    local pickerLabel = createInstance("TextLabel", {
+        Name = "Label",
+        Parent = pickerContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, -50, 0, 20),
+        Font = Enum.Font.Gotham,
+        Text = text,
+        TextColor3 = PurpleUI.Colors.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    })
+    
+    local colorDisplay = createInstance("Frame", {
+        Name = "Display",
+        Parent = pickerContainer,
+        BackgroundColor3 = default,
+        BorderSizePixel = 0,
+        Position = UDim2.new(1, -40, 0, 0),
+        Size = UDim2.new(0, 40, 0, 20),
+    })
+    
+    local displayCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 4),
+        Parent = colorDisplay,
+    })
+    
+    local pickerButton = createInstance("TextButton", {
+        Name = "Button",
+        Parent = pickerContainer,
+        BackgroundColor3 = PurpleUI.Colors.BackgroundLight,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, 30),
+        Text = "Pick Color",
+        TextColor3 = PurpleUI.Colors.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+    })
+    
+    local buttonCorner = createInstance("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = pickerButton,
+    })
+    
+    local colorPicker = {
+        Container = pickerContainer,
+        Display = colorDisplay,
+        Button = pickerButton,
+        Value = default,
+        _connections = {},
+    }
+    
+    table.insert(colorPicker._connections, pickerButton.MouseButton1Click:Connect(function()
+        -- In a real implementation, this would open a color picker UI
+        -- For this example, we'll just cycle through some preset colors
+        local colors = {
+            Color3.fromRGB(255, 0, 0),   -- Red
+            Color3.fromRGB(0, 255, 0),   -- Green
+            Color3.fromRGB(0, 0, 255),   -- Blue
+            Color3.fromRGB(255, 255, 0), -- Yellow
+            Color3.fromRGB(255, 0, 255), -- Magenta
+            Color3.fromRGB(0, 255, 255), -- Cyan
+            Color3.fromRGB(255, 255, 255), -- White
+        }
+        
+        local currentIndex = 1
+        for i, color in ipairs(colors) do
+            if colorPicker.Value:ToHSV() == color:ToHSV() then
+                currentIndex = i
+                break
+            end
+        end
+        
+        currentIndex = (currentIndex % #colors) + 1
+        colorPicker.Value = colors[currentIndex]
+        tween(colorDisplay, {BackgroundColor3 = colorPicker.Value}, 0.2)
+        
+        if callback then
+            callback(colorPicker.Value)
+        end
+    end))
+    
+    table.insert(self.Elements, {
+        Instance = pickerContainer,
+        Object = colorPicker,
+        Connections = colorPicker._connections
+    })
+    return colorPicker
+end
+
+-- Destroy the UI and clean up connections
+function PurpleUI:Destroy()
+    -- Clean up all connections
+    for _, connection in ipairs(self._connections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    
+    -- Clean up element connections
+    for _, element in ipairs(self.Elements) do
+        for _, connection in ipairs(element.Connections) do
+            if connection then
+                connection:Disconnect()
+            end
+        end
+    end
+    
+    -- Destroy the ScreenGui
+    if self.ScreenGui then
+        self.ScreenGui:Destroy()
+    end
+end
+
+return PurpleUI
