@@ -3,7 +3,8 @@
     A customizable UI library for Roblox with dark neon red theme
     Features:
     - Moveable on PC and Android
-    - Tabs and Sections
+    - Tabs and Sections with scrolling
+    - Minimize functionality
     - Labels and other UI elements
     - Responsive design
     - User Avatar Icon
@@ -14,7 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
-local Mouse = Player:GetMouse()
+-- Removed Mouse reference as requested
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 local CoreGui = game:GetService("CoreGui")
@@ -32,12 +33,13 @@ local Colors = {
     Border = Color3.fromRGB(50, 50, 50)
 }
 
--- Utility Functions
+-- Improved Draggable Function with Delta Movement
 local function MakeDraggable(frame, dragArea)
     local dragToggle = nil
     local dragInput = nil
     local dragStart = nil
     local startPos = nil
+    
     local function updateInput(input)
         local delta = input.Position - dragStart
         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -48,6 +50,8 @@ local function MakeDraggable(frame, dragArea)
             dragToggle = true
             dragStart = input.Position
             startPos = frame.Position
+            
+            -- Track when input ends
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragToggle = false
@@ -203,13 +207,33 @@ function DeltaLib:CreateWindow(title, size)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
     TitleLabel.Parent = TitleBar
     
+    -- Minimize Button
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Size = UDim2.new(0, 24, 0, 24)
+    MinimizeButton.Position = UDim2.new(1, -54, 0, 3) -- Position it to the left of the close button
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.Text = "−" -- Minus symbol
+    MinimizeButton.TextColor3 = Colors.Text
+    MinimizeButton.TextSize = 16
+    MinimizeButton.Font = Enum.Font.GothamBold
+    MinimizeButton.Parent = TitleBar
+    
+    MinimizeButton.MouseEnter:Connect(function()
+        MinimizeButton.TextColor3 = Colors.NeonRed
+    end)
+    
+    MinimizeButton.MouseLeave:Connect(function()
+        MinimizeButton.TextColor3 = Colors.Text
+    end)
+    
     -- Close Button
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
     CloseButton.Size = UDim2.new(0, 24, 0, 24)
     CloseButton.Position = UDim2.new(1, -27, 0, 3)
     CloseButton.BackgroundTransparency = 1
-    CloseButton.Text = "âœ•"
+    CloseButton.Text = "✕"
     CloseButton.TextColor3 = Colors.Text
     CloseButton.TextSize = 16
     CloseButton.Font = Enum.Font.GothamBold
@@ -227,10 +251,50 @@ function DeltaLib:CreateWindow(title, size)
         DeltaLibGUI:Destroy()
     end)
     
-    -- Make window draggable
+    -- Track minimized state
+    local isMinimized = false
+    local originalSize = size
+    
+    -- Minimize/Restore function
+    MinimizeButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        
+        if isMinimized then
+            -- Save current size before minimizing if it's been resized
+            originalSize = MainFrame.Size
+            
+            -- Minimize animation
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 30)
+            }):Play()
+            
+            -- Hide content
+            ContentContainer.Visible = false
+            TabContainer.Visible = false
+            
+            -- Change minimize button to restore symbol
+            MinimizeButton.Text = "+"
+        else
+            -- Restore animation
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                Size = originalSize
+            }):Play()
+            
+            -- Show content (with slight delay to match animation)
+            task.delay(0.1, function()
+                ContentContainer.Visible = true
+                TabContainer.Visible = true
+            end)
+            
+            -- Change restore button back to minimize symbol
+            MinimizeButton.Text = "−"
+        end
+    end)
+    
+    -- Make window draggable with improved function
     MakeDraggable(MainFrame, TitleBar)
     
-    -- Container for tabs
+    -- Container for tabs with horizontal scrolling
     local TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
     TabContainer.Size = UDim2.new(1, 0, 0, 35)
@@ -239,13 +303,24 @@ function DeltaLib:CreateWindow(title, size)
     TabContainer.BorderSizePixel = 0
     TabContainer.Parent = MainFrame
     
+    -- Tab Scroll Frame
+    local TabScrollFrame = Instance.new("ScrollingFrame")
+    TabScrollFrame.Name = "TabScrollFrame"
+    TabScrollFrame.Size = UDim2.new(1, -50, 1, 0) -- Leave space for scroll buttons
+    TabScrollFrame.Position = UDim2.new(0, 25, 0, 0) -- Center between scroll buttons
+    TabScrollFrame.BackgroundTransparency = 1
+    TabScrollFrame.BorderSizePixel = 0
+    TabScrollFrame.ScrollBarThickness = 0 -- Hide scrollbar
+    TabScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
+    TabScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
+    TabScrollFrame.Parent = TabContainer
+    
     -- Tab Buttons Container
     local TabButtons = Instance.new("Frame")
     TabButtons.Name = "TabButtons"
-    TabButtons.Size = UDim2.new(1, -10, 1, 0)
-    TabButtons.Position = UDim2.new(0, 5, 0, 0)
+    TabButtons.Size = UDim2.new(1, 0, 1, 0)
     TabButtons.BackgroundTransparency = 1
-    TabButtons.Parent = TabContainer
+    TabButtons.Parent = TabScrollFrame
     
     local TabButtonsLayout = Instance.new("UIListLayout")
     TabButtonsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -253,6 +328,51 @@ function DeltaLib:CreateWindow(title, size)
     TabButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabButtonsLayout.Padding = UDim.new(0, 5)
     TabButtonsLayout.Parent = TabButtons
+    
+    -- Left Scroll Button
+    local LeftScrollButton = Instance.new("TextButton")
+    LeftScrollButton.Name = "LeftScrollButton"
+    LeftScrollButton.Size = UDim2.new(0, 20, 0, 35)
+    LeftScrollButton.Position = UDim2.new(0, 0, 0, 0)
+    LeftScrollButton.BackgroundColor3 = Colors.DarkBackground
+    LeftScrollButton.BorderSizePixel = 0
+    LeftScrollButton.Text = "<"
+    LeftScrollButton.TextColor3 = Colors.Text
+    LeftScrollButton.TextSize = 14
+    LeftScrollButton.Font = Enum.Font.GothamBold
+    LeftScrollButton.Parent = TabContainer
+    
+    -- Right Scroll Button
+    local RightScrollButton = Instance.new("TextButton")
+    RightScrollButton.Name = "RightScrollButton"
+    RightScrollButton.Size = UDim2.new(0, 20, 0, 35)
+    RightScrollButton.Position = UDim2.new(1, -20, 0, 0)
+    RightScrollButton.BackgroundColor3 = Colors.DarkBackground
+    RightScrollButton.BorderSizePixel = 0
+    RightScrollButton.Text = ">"
+    RightScrollButton.TextColor3 = Colors.Text
+    RightScrollButton.TextSize = 14
+    RightScrollButton.Font = Enum.Font.GothamBold
+    RightScrollButton.Parent = TabContainer
+    
+    -- Scroll buttons functionality
+    local scrollAmount = 100 -- Amount to scroll in pixels
+    
+    LeftScrollButton.MouseButton1Click:Connect(function()
+        local newPosition = math.max(TabScrollFrame.CanvasPosition.X - scrollAmount, 0)
+        TabScrollFrame.CanvasPosition = Vector2.new(newPosition, 0)
+    end)
+    
+    RightScrollButton.MouseButton1Click:Connect(function()
+        local maxScroll = TabScrollFrame.CanvasSize.X.Offset - TabScrollFrame.AbsoluteSize.X
+        local newPosition = math.min(TabScrollFrame.CanvasPosition.X + scrollAmount, maxScroll)
+        TabScrollFrame.CanvasPosition = Vector2.new(newPosition, 0)
+    end)
+    
+    -- Update tab scroll canvas size when tabs change
+    TabButtonsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabScrollFrame.CanvasSize = UDim2.new(0, TabButtonsLayout.AbsoluteContentSize.X, 0, 0)
+    end)
     
     -- Content Container
     local ContentContainer = Instance.new("Frame")
@@ -328,6 +448,18 @@ function DeltaLib:CreateWindow(title, size)
             TabButton.TextColor3 = Colors.Text
             TabContent.Visible = true
             SelectedTab = {Button = TabButton, Content = TabContent}
+            
+            -- Scroll to make the selected tab visible
+            local buttonPosition = TabButton.AbsolutePosition.X - TabScrollFrame.AbsolutePosition.X
+            local buttonEnd = buttonPosition + TabButton.AbsoluteSize.X
+            
+            if buttonPosition < 0 then
+                -- Button is to the left of the visible area
+                TabScrollFrame.CanvasPosition = Vector2.new(TabScrollFrame.CanvasPosition.X + buttonPosition - 10, 0)
+            elseif buttonEnd > TabScrollFrame.AbsoluteSize.X then
+                -- Button is to the right of the visible area
+                TabScrollFrame.CanvasPosition = Vector2.new(TabScrollFrame.CanvasPosition.X + (buttonEnd - TabScrollFrame.AbsoluteSize.X) + 10, 0)
+            end
         end)
         
         -- Add to tabs table
@@ -370,13 +502,23 @@ function DeltaLib:CreateWindow(title, size)
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             SectionTitle.Parent = SectionContainer
             
-            -- Section Content
+            -- Section Content with Scrolling
+            local SectionScrollFrame = Instance.new("ScrollingFrame")
+            SectionScrollFrame.Name = "SectionScrollFrame"
+            SectionScrollFrame.Size = UDim2.new(1, -20, 0, 100) -- Initial height, will be adjusted
+            SectionScrollFrame.Position = UDim2.new(0, 10, 0, 25)
+            SectionScrollFrame.BackgroundTransparency = 1
+            SectionScrollFrame.BorderSizePixel = 0
+            SectionScrollFrame.ScrollBarThickness = 2
+            SectionScrollFrame.ScrollBarImageColor3 = Colors.NeonRed
+            SectionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
+            SectionScrollFrame.Parent = SectionContainer
+            
             local SectionContent = Instance.new("Frame")
             SectionContent.Name = "SectionContent"
-            SectionContent.Size = UDim2.new(1, -20, 0, 0) -- Will be resized based on content
-            SectionContent.Position = UDim2.new(0, 10, 0, 25)
+            SectionContent.Size = UDim2.new(1, 0, 0, 0) -- Will be resized based on content
             SectionContent.BackgroundTransparency = 1
-            SectionContent.Parent = SectionContainer
+            SectionContent.Parent = SectionScrollFrame
             
             local SectionContentLayout = Instance.new("UIListLayout")
             SectionContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -385,8 +527,16 @@ function DeltaLib:CreateWindow(title, size)
             
             -- Auto-size the section based on content
             SectionContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                SectionContent.Size = UDim2.new(1, -20, 0, SectionContentLayout.AbsoluteContentSize.Y)
-                SectionContainer.Size = UDim2.new(1, 0, 0, SectionContent.Size.Y.Offset + 35)
+                local contentHeight = SectionContentLayout.AbsoluteContentSize.Y
+                SectionContent.Size = UDim2.new(1, 0, 0, contentHeight)
+                
+                -- Update the canvas size for scrolling
+                SectionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+                
+                -- Adjust the section height (capped at 200 for scrolling)
+                local newHeight = math.min(contentHeight, 200)
+                SectionScrollFrame.Size = UDim2.new(1, -20, 0, newHeight)
+                SectionContainer.Size = UDim2.new(1, 0, 0, newHeight + 35) -- +35 for the title
             end)
             
             -- Label Creation Function
@@ -557,7 +707,7 @@ function DeltaLib:CreateWindow(title, size)
                 return ToggleFunctions
             end
             
-            -- Slider Creation Function
+            -- Slider Creation Function - Improved for PC and Android
             function Section:AddSlider(sliderText, min, max, default, callback)
                 min = min or 0
                 max = max or 100
@@ -636,23 +786,32 @@ function DeltaLib:CreateWindow(title, size)
                 -- Set initial value
                 UpdateSlider(default)
                 
-                -- Slider Interaction
+                -- Improved Slider Interaction for PC and Android
                 local isDragging = false
                 
-                SliderButton.MouseButton1Down:Connect(function()
-                    isDragging = true
+                SliderButton.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        isDragging = true
+                        
+                        -- Calculate value directly from initial press position
+                        local relativePos = input.Position.X - SliderBackground.AbsolutePosition.X
+                        local percent = math.clamp(relativePos / SliderBackground.AbsoluteSize.X, 0, 1)
+                        local value = min + (max - min) * percent
+                        
+                        UpdateSlider(value)
+                    end
                 end)
                 
                 UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
                         isDragging = false
                     end
                 end)
                 
                 UserInputService.InputChanged:Connect(function(input)
                     if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                        local mousePos = UserInputService:GetMouseLocation()
-                        local relativePos = mousePos.X - SliderBackground.AbsolutePosition.X
+                        -- Use delta movement for smoother control
+                        local relativePos = input.Position.X - SliderBackground.AbsolutePosition.X
                         local percent = math.clamp(relativePos / SliderBackground.AbsoluteSize.X, 0, 1)
                         local value = min + (max - min) * percent
                         
@@ -673,7 +832,7 @@ function DeltaLib:CreateWindow(title, size)
                 return SliderFunctions
             end
             
-            -- Dropdown Creation Function
+            -- Dropdown Creation Function - Fixed text change issue
             function Section:AddDropdown(dropdownText, options, default, callback)
                 options = options or {}
                 default = default or options[1]
@@ -696,22 +855,37 @@ function DeltaLib:CreateWindow(title, size)
                 DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
                 DropdownLabel.Parent = DropdownContainer
                 
+                -- Create a separate text label for the selected value
+                local SelectedText = Instance.new("TextLabel")
+                SelectedText.Name = "SelectedText"
+                SelectedText.Size = UDim2.new(1, -50, 1, 0)
+                SelectedText.BackgroundTransparency = 1
+                SelectedText.Text = default
+                SelectedText.TextColor3 = Colors.Text
+                SelectedText.TextSize = 14
+                SelectedText.Font = Enum.Font.Gotham
+                SelectedText.TextXAlignment = Enum.TextXAlignment.Left
+                SelectedText.ClipsDescendants = true
+                
                 local DropdownButton = Instance.new("TextButton")
                 DropdownButton.Name = "DropdownButton"
                 DropdownButton.Size = UDim2.new(1, 0, 0, 25)
                 DropdownButton.Position = UDim2.new(0, 0, 0, 20)
                 DropdownButton.BackgroundColor3 = Colors.DarkBackground
                 DropdownButton.BorderSizePixel = 0
-                DropdownButton.Text = default
+                DropdownButton.Text = ""  -- Empty text since we're using SelectedText
                 DropdownButton.TextColor3 = Colors.Text
                 DropdownButton.TextSize = 14
                 DropdownButton.Font = Enum.Font.Gotham
                 DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
                 DropdownButton.Parent = DropdownContainer
                 
+                -- Add the selected text to the button
+                SelectedText.Parent = DropdownButton
+                
                 local DropdownButtonPadding = Instance.new("UIPadding")
                 DropdownButtonPadding.PaddingLeft = UDim.new(0, 10)
-                DropdownButtonPadding.Parent = DropdownButton
+                DropdownButtonPadding.Parent = SelectedText
                 
                 local DropdownButtonCorner = Instance.new("UICorner")
                 DropdownButtonCorner.CornerRadius = UDim.new(0, 4)
@@ -776,12 +950,17 @@ function DeltaLib:CreateWindow(title, size)
                         OptionButton.BackgroundTransparency = 1
                     end)
                     
-                    -- Select option
+                    -- Select option - Fixed to properly update text
                     OptionButton.MouseButton1Click:Connect(function()
-                        DropdownButton.Text = option
+                        -- Update the selected text label instead of the button text
+                        SelectedText.Text = option
+                        
+                        -- Close dropdown
                         DropdownMenu.Visible = false
                         DropdownMenu.Size = UDim2.new(1, 0, 0, 0)
                         TweenService:Create(DropdownArrow, TweenInfo.new(0.2), {Rotation = 0}):Play()
+                        
+                        -- Call callback with selected option
                         callback(option)
                     end)
                     
@@ -825,13 +1004,13 @@ function DeltaLib:CreateWindow(title, size)
                 
                 function DropdownFunctions:SetValue(value)
                     if table.find(options, value) then
-                        DropdownButton.Text = value
+                        SelectedText.Text = value
                         callback(value)
                     end
                 end
                 
                 function DropdownFunctions:GetValue()
-                    return DropdownButton.Text
+                    return SelectedText.Text
                 end
                 
                 function DropdownFunctions:Refresh(newOptions, newDefault)
@@ -875,7 +1054,7 @@ function DeltaLib:CreateWindow(title, size)
                         
                         -- Select option
                         OptionButton.MouseButton1Click:Connect(function()
-                            DropdownButton.Text = option
+                            SelectedText.Text = option
                             DropdownMenu.Visible = false
                             DropdownMenu.Size = UDim2.new(1, 0, 0, 0)
                             TweenService:Create(DropdownArrow, TweenInfo.new(0.2), {Rotation = 0}):Play()
@@ -885,7 +1064,7 @@ function DeltaLib:CreateWindow(title, size)
                         table.insert(OptionButtons, OptionButton)
                     end
                     
-                    DropdownButton.Text = default
+                    SelectedText.Text = default
                 end
                 
                 return DropdownFunctions
