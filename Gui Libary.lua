@@ -3,9 +3,11 @@
     A customizable UI library for Roblox with dark neon red theme
     Features:
     - Moveable on PC and Android
-    - Tabs and Sections with scrolling
+    - Tabs with horizontal scrolling
+    - Sections with vertical scrolling
     - Minimize functionality
-    - Labels and other UI elements
+    - Fixed dropdown menu
+    - Labels, buttons, toggles, sliders, dropdowns, and textboxes
     - Responsive design
     - User Avatar Icon
 ]]
@@ -15,7 +17,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
--- Removed Mouse reference as requested
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 local CoreGui = game:GetService("CoreGui")
@@ -251,6 +252,195 @@ function DeltaLib:CreateWindow(title, size)
         DeltaLibGUI:Destroy()
     end)
     
+    -- Make window draggable with improved function
+    MakeDraggable(MainFrame, TitleBar)
+    
+    -- Container for tabs with horizontal scrolling
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Name = "TabContainer"
+    TabContainer.Size = UDim2.new(1, 0, 0, 35)
+    TabContainer.Position = UDim2.new(0, 0, 0, 30)
+    TabContainer.BackgroundColor3 = Colors.LightBackground
+    TabContainer.BorderSizePixel = 0
+    TabContainer.Parent = MainFrame
+    
+    -- Left Scroll Button
+    local LeftScrollButton = Instance.new("TextButton")
+    LeftScrollButton.Name = "LeftScrollButton"
+    LeftScrollButton.Size = UDim2.new(0, 25, 0, 35)
+    LeftScrollButton.Position = UDim2.new(0, 0, 0, 0)
+    LeftScrollButton.BackgroundColor3 = Colors.DarkBackground
+    LeftScrollButton.BorderSizePixel = 0
+    LeftScrollButton.Text = "←"
+    LeftScrollButton.TextColor3 = Colors.Text
+    LeftScrollButton.TextSize = 18
+    LeftScrollButton.Font = Enum.Font.GothamBold
+    LeftScrollButton.ZIndex = 3
+    LeftScrollButton.Parent = TabContainer
+    
+    -- Right Scroll Button
+    local RightScrollButton = Instance.new("TextButton")
+    RightScrollButton.Name = "RightScrollButton"
+    RightScrollButton.Size = UDim2.new(0, 25, 0, 35)
+    RightScrollButton.Position = UDim2.new(1, -25, 0, 0)
+    RightScrollButton.BackgroundColor3 = Colors.DarkBackground
+    RightScrollButton.BorderSizePixel = 0
+    RightScrollButton.Text = "→"
+    RightScrollButton.TextColor3 = Colors.Text
+    RightScrollButton.TextSize = 18
+    RightScrollButton.Font = Enum.Font.GothamBold
+    RightScrollButton.ZIndex = 3
+    RightScrollButton.Parent = TabContainer
+    
+    -- Tab Scroll Frame
+    local TabScrollFrame = Instance.new("ScrollingFrame")
+    TabScrollFrame.Name = "TabScrollFrame"
+    TabScrollFrame.Size = UDim2.new(1, -50, 1, 0) -- Leave space for scroll buttons
+    TabScrollFrame.Position = UDim2.new(0, 25, 0, 0) -- Center between scroll buttons
+    TabScrollFrame.BackgroundTransparency = 1
+    TabScrollFrame.BorderSizePixel = 0
+    TabScrollFrame.ScrollBarThickness = 0 -- Hide scrollbar
+    TabScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
+    TabScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
+    TabScrollFrame.Parent = TabContainer
+    
+    -- Tab Buttons Container
+    local TabButtons = Instance.new("Frame")
+    TabButtons.Name = "TabButtons"
+    TabButtons.Size = UDim2.new(1, 0, 1, 0)
+    TabButtons.BackgroundTransparency = 1
+    TabButtons.Parent = TabScrollFrame
+    
+    local TabButtonsLayout = Instance.new("UIListLayout")
+    TabButtonsLayout.FillDirection = Enum.FillDirection.Horizontal
+    TabButtonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    TabButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabButtonsLayout.Padding = UDim.new(0, 5)
+    TabButtonsLayout.Parent = TabButtons
+    
+    -- Add padding to the first tab
+    local TabButtonsPadding = Instance.new("UIPadding")
+    TabButtonsPadding.PaddingLeft = UDim.new(0, 5)
+    TabButtonsPadding.PaddingRight = UDim.new(0, 5)
+    TabButtonsPadding.Parent = TabButtons
+    
+    -- Update tab scroll canvas size when tabs change
+    TabButtonsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabScrollFrame.CanvasSize = UDim2.new(0, TabButtonsLayout.AbsoluteContentSize.X, 0, 0)
+    end)
+    
+    -- Scroll buttons functionality
+    local scrollAmount = 150 -- Amount to scroll in pixels
+    local scrollDuration = 0.3 -- Duration of scroll animation
+    
+    -- Function to scroll with animation
+    local function ScrollTabs(direction)
+        local currentPos = TabScrollFrame.CanvasPosition.X
+        local targetPos
+        
+        if direction == "left" then
+            targetPos = math.max(currentPos - scrollAmount, 0)
+        else
+            local maxScroll = TabScrollFrame.CanvasSize.X.Offset - TabScrollFrame.AbsoluteSize.X
+            targetPos = math.min(currentPos + scrollAmount, maxScroll)
+        end
+        
+        -- Create a smooth scrolling animation
+        local tweenInfo = TweenInfo.new(scrollDuration, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(TabScrollFrame, tweenInfo, {CanvasPosition = Vector2.new(targetPos, 0)})
+        tween:Play()
+    end
+    
+    -- Button hover effects
+    LeftScrollButton.MouseEnter:Connect(function()
+        TweenService:Create(LeftScrollButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.NeonRed}):Play()
+    end)
+    
+    LeftScrollButton.MouseLeave:Connect(function()
+        TweenService:Create(LeftScrollButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.DarkBackground}):Play()
+    end)
+    
+    RightScrollButton.MouseEnter:Connect(function()
+        TweenService:Create(RightScrollButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.NeonRed}):Play()
+    end)
+    
+    RightScrollButton.MouseLeave:Connect(function()
+        TweenService:Create(RightScrollButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.DarkBackground}):Play()
+    end)
+    
+    -- Connect scroll buttons
+    LeftScrollButton.MouseButton1Click:Connect(function()
+        ScrollTabs("left")
+    end)
+    
+    RightScrollButton.MouseButton1Click:Connect(function()
+        ScrollTabs("right")
+    end)
+    
+    -- Add continuous scrolling when holding the button
+    local isScrollingLeft = false
+    local isScrollingRight = false
+    
+    LeftScrollButton.MouseButton1Down:Connect(function()
+        isScrollingLeft = true
+        
+        -- Initial scroll
+        ScrollTabs("left")
+        
+        -- Continue scrolling while button is held
+        spawn(function()
+            local initialDelay = 0.5 -- Wait before starting continuous scroll
+            wait(initialDelay)
+            
+            while isScrollingLeft do
+                ScrollTabs("left")
+                wait(0.2) -- Scroll interval
+            end
+        end)
+    end)
+    
+    LeftScrollButton.MouseButton1Up:Connect(function()
+        isScrollingLeft = false
+    end)
+    
+    LeftScrollButton.MouseLeave:Connect(function()
+        isScrollingLeft = false
+    end)
+    
+    RightScrollButton.MouseButton1Down:Connect(function()
+        isScrollingRight = true
+        
+        -- Initial scroll
+        ScrollTabs("right")
+        
+        -- Continue scrolling while button is held
+        spawn(function()
+            local initialDelay = 0.5 -- Wait before starting continuous scroll
+            wait(initialDelay)
+            
+            while isScrollingRight do
+                ScrollTabs("right")
+                wait(0.2) -- Scroll interval
+            end
+        end)
+    end)
+    
+    RightScrollButton.MouseButton1Up:Connect(function()
+        isScrollingRight = false
+    end)
+    
+    RightScrollButton.MouseLeave:Connect(function()
+        isScrollingRight = false
+    end)
+    
+    -- Content Container
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, 0, 1, -65)
+    ContentContainer.Position = UDim2.new(0, 0, 0, 65)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = MainFrame
+    
     -- Track minimized state
     local isMinimized = false
     local originalSize = size
@@ -290,97 +480,6 @@ function DeltaLib:CreateWindow(title, size)
             MinimizeButton.Text = "−"
         end
     end)
-    
-    -- Make window draggable with improved function
-    MakeDraggable(MainFrame, TitleBar)
-    
-    -- Container for tabs with horizontal scrolling
-    local TabContainer = Instance.new("Frame")
-    TabContainer.Name = "TabContainer"
-    TabContainer.Size = UDim2.new(1, 0, 0, 35)
-    TabContainer.Position = UDim2.new(0, 0, 0, 30)
-    TabContainer.BackgroundColor3 = Colors.LightBackground
-    TabContainer.BorderSizePixel = 0
-    TabContainer.Parent = MainFrame
-    
-    -- Tab Scroll Frame
-    local TabScrollFrame = Instance.new("ScrollingFrame")
-    TabScrollFrame.Name = "TabScrollFrame"
-    TabScrollFrame.Size = UDim2.new(1, -50, 1, 0) -- Leave space for scroll buttons
-    TabScrollFrame.Position = UDim2.new(0, 25, 0, 0) -- Center between scroll buttons
-    TabScrollFrame.BackgroundTransparency = 1
-    TabScrollFrame.BorderSizePixel = 0
-    TabScrollFrame.ScrollBarThickness = 0 -- Hide scrollbar
-    TabScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
-    TabScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
-    TabScrollFrame.Parent = TabContainer
-    
-    -- Tab Buttons Container
-    local TabButtons = Instance.new("Frame")
-    TabButtons.Name = "TabButtons"
-    TabButtons.Size = UDim2.new(1, 0, 1, 0)
-    TabButtons.BackgroundTransparency = 1
-    TabButtons.Parent = TabScrollFrame
-    
-    local TabButtonsLayout = Instance.new("UIListLayout")
-    TabButtonsLayout.FillDirection = Enum.FillDirection.Horizontal
-    TabButtonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    TabButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabButtonsLayout.Padding = UDim.new(0, 5)
-    TabButtonsLayout.Parent = TabButtons
-    
-    -- Left Scroll Button
-    local LeftScrollButton = Instance.new("TextButton")
-    LeftScrollButton.Name = "LeftScrollButton"
-    LeftScrollButton.Size = UDim2.new(0, 20, 0, 35)
-    LeftScrollButton.Position = UDim2.new(0, 0, 0, 0)
-    LeftScrollButton.BackgroundColor3 = Colors.DarkBackground
-    LeftScrollButton.BorderSizePixel = 0
-    LeftScrollButton.Text = "<"
-    LeftScrollButton.TextColor3 = Colors.Text
-    LeftScrollButton.TextSize = 14
-    LeftScrollButton.Font = Enum.Font.GothamBold
-    LeftScrollButton.Parent = TabContainer
-    
-    -- Right Scroll Button
-    local RightScrollButton = Instance.new("TextButton")
-    RightScrollButton.Name = "RightScrollButton"
-    RightScrollButton.Size = UDim2.new(0, 20, 0, 35)
-    RightScrollButton.Position = UDim2.new(1, -20, 0, 0)
-    RightScrollButton.BackgroundColor3 = Colors.DarkBackground
-    RightScrollButton.BorderSizePixel = 0
-    RightScrollButton.Text = ">"
-    RightScrollButton.TextColor3 = Colors.Text
-    RightScrollButton.TextSize = 14
-    RightScrollButton.Font = Enum.Font.GothamBold
-    RightScrollButton.Parent = TabContainer
-    
-    -- Scroll buttons functionality
-    local scrollAmount = 100 -- Amount to scroll in pixels
-    
-    LeftScrollButton.MouseButton1Click:Connect(function()
-        local newPosition = math.max(TabScrollFrame.CanvasPosition.X - scrollAmount, 0)
-        TabScrollFrame.CanvasPosition = Vector2.new(newPosition, 0)
-    end)
-    
-    RightScrollButton.MouseButton1Click:Connect(function()
-        local maxScroll = TabScrollFrame.CanvasSize.X.Offset - TabScrollFrame.AbsoluteSize.X
-        local newPosition = math.min(TabScrollFrame.CanvasPosition.X + scrollAmount, maxScroll)
-        TabScrollFrame.CanvasPosition = Vector2.new(newPosition, 0)
-    end)
-    
-    -- Update tab scroll canvas size when tabs change
-    TabButtonsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        TabScrollFrame.CanvasSize = UDim2.new(0, TabButtonsLayout.AbsoluteContentSize.X, 0, 0)
-    end)
-    
-    -- Content Container
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Name = "ContentContainer"
-    ContentContainer.Size = UDim2.new(1, 0, 1, -65)
-    ContentContainer.Position = UDim2.new(0, 0, 0, 65)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Parent = MainFrame
     
     -- Tab Management
     local Tabs = {}
@@ -452,13 +551,21 @@ function DeltaLib:CreateWindow(title, size)
             -- Scroll to make the selected tab visible
             local buttonPosition = TabButton.AbsolutePosition.X - TabScrollFrame.AbsolutePosition.X
             local buttonEnd = buttonPosition + TabButton.AbsoluteSize.X
+            local viewportWidth = TabScrollFrame.AbsoluteSize.X
             
             if buttonPosition < 0 then
                 -- Button is to the left of the visible area
-                TabScrollFrame.CanvasPosition = Vector2.new(TabScrollFrame.CanvasPosition.X + buttonPosition - 10, 0)
-            elseif buttonEnd > TabScrollFrame.AbsoluteSize.X then
+                local targetPos = TabScrollFrame.CanvasPosition.X + buttonPosition - 10
+                TweenService:Create(TabScrollFrame, TweenInfo.new(0.3), {
+                    CanvasPosition = Vector2.new(math.max(targetPos, 0), 0)
+                }):Play()
+            elseif buttonEnd > viewportWidth then
                 -- Button is to the right of the visible area
-                TabScrollFrame.CanvasPosition = Vector2.new(TabScrollFrame.CanvasPosition.X + (buttonEnd - TabScrollFrame.AbsoluteSize.X) + 10, 0)
+                local targetPos = TabScrollFrame.CanvasPosition.X + (buttonEnd - viewportWidth) + 10
+                local maxScroll = TabScrollFrame.CanvasSize.X.Offset - viewportWidth
+                TweenService:Create(TabScrollFrame, TweenInfo.new(0.3), {
+                    CanvasPosition = Vector2.new(math.min(targetPos, maxScroll), 0)
+                }):Play()
             end
         end)
         
@@ -537,6 +644,9 @@ function DeltaLib:CreateWindow(title, size)
                 local newHeight = math.min(contentHeight, 200)
                 SectionScrollFrame.Size = UDim2.new(1, -20, 0, newHeight)
                 SectionContainer.Size = UDim2.new(1, 0, 0, newHeight + 35) -- +35 for the title
+            end)
+            
+            -- Label  0, 0, newHeight + 35) -- +35 for the title
             end)
             
             -- Label Creation Function
@@ -832,7 +942,7 @@ function DeltaLib:CreateWindow(title, size)
                 return SliderFunctions
             end
             
-            -- Dropdown Creation Function - Fixed text change issue
+            -- Dropdown Creation Function - Fixed dropdown menu
             function Section:AddDropdown(dropdownText, options, default, callback)
                 options = options or {}
                 default = default or options[1]
@@ -900,17 +1010,24 @@ function DeltaLib:CreateWindow(title, size)
                 DropdownArrow.ImageColor3 = Colors.NeonRed
                 DropdownArrow.Parent = DropdownButton
                 
-                -- Dropdown Menu
+                -- Dropdown Menu - Fix: Create a separate parent for the dropdown menu
+                local DropdownMenuContainer = Instance.new("Frame")
+                DropdownMenuContainer.Name = "DropdownMenuContainer"
+                DropdownMenuContainer.Size = UDim2.new(1, 0, 0, 0)
+                DropdownMenuContainer.Position = UDim2.new(0, 0, 1, 0)
+                DropdownMenuContainer.BackgroundTransparency = 1
+                DropdownMenuContainer.ZIndex = 10 -- Ensure it appears above other elements
+                DropdownMenuContainer.Parent = DropdownButton
+                
                 local DropdownMenu = Instance.new("Frame")
                 DropdownMenu.Name = "DropdownMenu"
                 DropdownMenu.Size = UDim2.new(1, 0, 0, 0)
-                DropdownMenu.Position = UDim2.new(0, 0, 1, 0)
                 DropdownMenu.BackgroundColor3 = Colors.DarkBackground
                 DropdownMenu.BorderSizePixel = 0
                 DropdownMenu.ClipsDescendants = true
                 DropdownMenu.Visible = false
-                DropdownMenu.ZIndex = 5
-                DropdownMenu.Parent = DropdownButton
+                DropdownMenu.ZIndex = 10
+                DropdownMenu.Parent = DropdownMenuContainer
                 
                 local DropdownMenuCorner = Instance.new("UICorner")
                 DropdownMenuCorner.CornerRadius = UDim.new(0, 4)
@@ -933,7 +1050,7 @@ function DeltaLib:CreateWindow(title, size)
                     OptionButton.TextSize = 14
                     OptionButton.Font = Enum.Font.Gotham
                     OptionButton.TextXAlignment = Enum.TextXAlignment.Left
-                    OptionButton.ZIndex = 6
+                    OptionButton.ZIndex = 11
                     OptionButton.Parent = DropdownMenu
                     
                     local OptionButtonPadding = Instance.new("UIPadding")
@@ -974,6 +1091,7 @@ function DeltaLib:CreateWindow(title, size)
                     isOpen = not isOpen
                     
                     if isOpen then
+                        -- Fix: Position the dropdown menu properly
                         DropdownMenu.Visible = true
                         DropdownMenu:TweenSize(UDim2.new(1, 0, 0, #options * 25), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
                         TweenService:Create(DropdownArrow, TweenInfo.new(0.2), {Rotation = 180}):Play()
@@ -1035,7 +1153,7 @@ function DeltaLib:CreateWindow(title, size)
                         OptionButton.TextSize = 14
                         OptionButton.Font = Enum.Font.Gotham
                         OptionButton.TextXAlignment = Enum.TextXAlignment.Left
-                        OptionButton.ZIndex = 6
+                        OptionButton.ZIndex = 11
                         OptionButton.Parent = DropdownMenu
                         
                         local OptionButtonPadding = Instance.new("UIPadding")
