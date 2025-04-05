@@ -1004,7 +1004,7 @@ function DeltaLib:CreateWindow(title, size)
                return SliderFunctions
            end
            
-           -- Dropdown Creation Function
+           -- Dropdown Creation Function - FIXED VERSION
            function Section:AddDropdown(dropdownText, options, default, callback)
                options = options or {}
                default = default or options[1] or ""
@@ -1066,6 +1066,14 @@ function DeltaLib:CreateWindow(title, size)
                DropdownTextBoxStroke.Transparency = 0.7
                DropdownTextBoxStroke.Thickness = 1
                DropdownTextBoxStroke.Parent = DropdownTextBox
+               
+               -- Create a transparent button over the TextBox to handle clicks
+               local DropdownTextBoxButton = Instance.new("TextButton")
+               DropdownTextBoxButton.Name = "DropdownTextBoxButton"
+               DropdownTextBoxButton.Size = UDim2.new(1, 0, 1, 0)
+               DropdownTextBoxButton.BackgroundTransparency = 1
+               DropdownTextBoxButton.Text = ""
+               DropdownTextBoxButton.Parent = DropdownTextBox
                
                local DropdownToggle = Instance.new("ImageButton")
                DropdownToggle.Name = "DropdownToggle"
@@ -1210,7 +1218,7 @@ function DeltaLib:CreateWindow(title, size)
                end
                
                DropdownToggle.MouseButton1Click:Connect(ToggleDropdown)
-               DropdownTextBox.MouseButton1Click:Connect(ToggleDropdown)
+               DropdownTextBoxButton.MouseButton1Click:Connect(ToggleDropdown)
                
                UserInputService.InputBegan:Connect(function(input)
                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
