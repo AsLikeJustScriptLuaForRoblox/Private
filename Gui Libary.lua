@@ -1,22 +1,10 @@
---[[
-    DeltaLib UI Library
-    A customizable UI library for Roblox with dark neon red theme
-    Features:
-    - Moveable on PC and Android
-    - Tabs with horizontal scrolling
-    - Sections with vertical scrolling
-    - Minimize functionality
-    - Fixed dropdown menu
-    - Labels, buttons, toggles, sliders, dropdowns, and textboxes
-    - Responsive design
-    - User Avatar Icon
-]]
-
+-- DeltaLib UI Library
 local DeltaLib = {}
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
+-- Removed Mouse reference as requested
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 local CoreGui = game:GetService("CoreGui")
@@ -644,9 +632,6 @@ function DeltaLib:CreateWindow(title, size)
                 local newHeight = math.min(contentHeight, 200)
                 SectionScrollFrame.Size = UDim2.new(1, -20, 0, newHeight)
                 SectionContainer.Size = UDim2.new(1, 0, 0, newHeight + 35) -- +35 for the title
-            end)
-            
-            -- Label  0, 0, newHeight + 35) -- +35 for the title
             end)
             
             -- Label Creation Function
