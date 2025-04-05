@@ -8,6 +8,25 @@ local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 local CoreGui = game:GetService("CoreGui")
 
+function DeltaLib.Create(instanceType, properties, children)
+    local obj = Instance.new(instanceType)
+    
+    -- Set properties first
+    if properties then
+        for property, value in pairs(properties) do
+            obj[property] = value
+        end
+    end
+    
+    -- Parent children after properties
+    if children then
+        for _, child in pairs(children) do
+            child.Parent = obj
+        end
+    end
+    
+    return obj
+end
 -- Colors - Dark Neon Theme
 local Colors = {
    Background = Color3.fromRGB(13, 14, 16),       -- Darker background
@@ -127,7 +146,7 @@ function DeltaLib:CreateWindow(title, size)
    -- Title Bar
    local TitleBar = Instance.new("Frame")
    TitleBar.Name = "TitleBar"
-   TitleBar.Size = UDim2.new(1, 0, 0, 30)
+   TitleBar.Size = UDim2.new(1, 0, 0, 24)
    TitleBar.BackgroundColor3 = Colors.DarkBackground
    TitleBar.BorderSizePixel = 0
    TitleBar.Parent = MainFrame
@@ -197,7 +216,7 @@ function DeltaLib:CreateWindow(title, size)
    TitleLabel.BackgroundTransparency = 1
    TitleLabel.Text = title or "Delta UI"
    TitleLabel.TextColor3 = Colors.NeonRed
-   TitleLabel.TextSize = 16
+   TitleLabel.TextSize = 12
    TitleLabel.Font = Enum.Font.GothamBold
    TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
    TitleLabel.Parent = TitleBar
@@ -252,7 +271,7 @@ function DeltaLib:CreateWindow(title, size)
    -- Container for tabs with improved horizontal scrolling
    local TabContainer = Instance.new("Frame")
    TabContainer.Name = "TabContainer"
-   TabContainer.Size = UDim2.new(1, 0, 0, 35)
+   TabContainer.Size = UDim2.new(1, 0, 0, 28) 
    TabContainer.Position = UDim2.new(0, 0, 0, 30)
    TabContainer.BackgroundColor3 = Colors.LightBackground
    TabContainer.BorderSizePixel = 0
@@ -524,14 +543,14 @@ function DeltaLib:CreateWindow(title, size)
        TabButtonStroke.Parent = TabButton
        
        -- Tab Button Text
-       local TabButtonText = Instance.new("TextLabel")
+       local  = Instance.new("TextLabel")
        TabButtonText.Name = "TabButtonText"
        TabButtonText.Size = UDim2.new(1, 0, 1, 0)
        TabButtonText.BackgroundTransparency = 1
        TabButtonText.Text = tabName
        TabButtonText.TextColor3 = Colors.SubText
-       TabButtonText.TextSize = 14
-       TabButtonText.Font = Enum.Font.GothamSemibold
+       TabButtonText.TextSize = 12
+       TabButtonText.Font = Enum.Font.Gotham
        TabButtonText.Parent = TabButton
        
        -- Tab Content
@@ -633,7 +652,7 @@ function DeltaLib:CreateWindow(title, size)
            -- Section Container
            local SectionContainer = Instance.new("Frame")
            SectionContainer.Name = sectionName.."Section"
-           SectionContainer.Size = UDim2.new(1, 0, 0, 30)
+           SectionContainer.Size = UDim2.new(1, 0, 0, 25)
            SectionContainer.BackgroundColor3 = Colors.Background
            SectionContainer.BorderSizePixel = 0
            SectionContainer.Parent = TabContent
@@ -657,8 +676,8 @@ function DeltaLib:CreateWindow(title, size)
            SectionTitle.BackgroundTransparency = 1
            SectionTitle.Text = sectionName
            SectionTitle.TextColor3 = Colors.NeonRed
-           SectionTitle.TextSize = 14
-           SectionTitle.Font = Enum.Font.GothamBold
+           SectionTitle.TextSize = 12
+           SectionTitle.Font = Enum.Font.Gotham
            SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
            SectionTitle.Parent = SectionContainer
            
@@ -731,7 +750,7 @@ function DeltaLib:CreateWindow(title, size)
                
                local ButtonContainer = Instance.new("Frame")
                ButtonContainer.Name = "ButtonContainer"
-               ButtonContainer.Size = UDim2.new(1, 0, 0, 30)
+               ButtonContainer.Size = UDim2.new(1, 0, 0, 25)
                ButtonContainer.BackgroundTransparency = 1
                ButtonContainer.Parent = SectionContent
                
@@ -1012,7 +1031,7 @@ function DeltaLib:CreateWindow(title, size)
                
                local DropdownContainer = Instance.new("Frame")
                DropdownContainer.Name = "DropdownContainer"
-               DropdownContainer.Size = UDim2.new(1, 0, 0, 30)
+               DropdownContainer.Size = UDim2.new(1, 0, 0, 25)
                DropdownContainer.BackgroundColor3 = Colors.Background
                DropdownContainer.BorderSizePixel = 0
                DropdownContainer.ClipsDescendants = true
@@ -1036,7 +1055,7 @@ function DeltaLib:CreateWindow(title, size)
                DropdownLabel.BackgroundTransparency = 1
                DropdownLabel.Text = dropdownText
                DropdownLabel.TextColor3 = Colors.Text
-               DropdownLabel.TextSize = 14
+               DropdownLabel.TextSize = 12
                DropdownLabel.Font = Enum.Font.Gotham
                DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
                DropdownLabel.Parent = DropdownContainer
