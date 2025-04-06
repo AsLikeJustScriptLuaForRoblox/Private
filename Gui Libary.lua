@@ -248,7 +248,7 @@ function DeltaLib:CreateWindow(title, size)
     MinimizeButton.Size = UDim2.new(0, 20, 0, 20) -- Smaller button
     MinimizeButton.Position = UDim2.new(1, -45, 0, 2) -- Position it to the left of the close button
     MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.Text = "âˆ’" -- Minus symbol
+    MinimizeButton.Text = "−" -- Minus symbol
     MinimizeButton.TextColor3 = Colors.Text
     MinimizeButton.TextSize = 14 -- Smaller text size
     MinimizeButton.Font = Enum.Font.GothamBold
@@ -268,7 +268,7 @@ function DeltaLib:CreateWindow(title, size)
     CloseButton.Size = UDim2.new(0, 20, 0, 20) -- Smaller button
     CloseButton.Position = UDim2.new(1, -22, 0, 2)
     CloseButton.BackgroundTransparency = 1
-    CloseButton.Text = "âœ•"
+    CloseButton.Text = "✕"
     CloseButton.TextColor3 = Colors.Text
     CloseButton.TextSize = 14 -- Smaller text size
     CloseButton.Font = Enum.Font.GothamBold
@@ -305,7 +305,7 @@ function DeltaLib:CreateWindow(title, size)
     LeftScrollButton.Position = UDim2.new(0, 0, 0, 0)
     LeftScrollButton.BackgroundColor3 = Colors.DarkBackground
     LeftScrollButton.BorderSizePixel = 0
-    LeftScrollButton.Text = "â†"
+    LeftScrollButton.Text = "←"
     LeftScrollButton.TextColor3 = Colors.Text
     LeftScrollButton.TextSize = 14 -- Smaller text size
     LeftScrollButton.Font = Enum.Font.GothamBold
@@ -319,7 +319,7 @@ function DeltaLib:CreateWindow(title, size)
     RightScrollButton.Position = UDim2.new(1, -20, 0, 0)
     RightScrollButton.BackgroundColor3 = Colors.DarkBackground
     RightScrollButton.BorderSizePixel = 0
-    RightScrollButton.Text = "â†’"
+    RightScrollButton.Text = "→"
     RightScrollButton.TextColor3 = Colors.Text
     RightScrollButton.TextSize = 14 -- Smaller text size
     RightScrollButton.Font = Enum.Font.GothamBold
@@ -519,7 +519,7 @@ function DeltaLib:CreateWindow(title, size)
             end)
             
             -- Change restore button back to minimize symbol
-            MinimizeButton.Text = "âˆ’"
+            MinimizeButton.Text = "−"
         end
     end)
     
