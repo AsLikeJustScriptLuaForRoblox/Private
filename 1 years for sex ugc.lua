@@ -1,5 +1,5 @@
 if game.PlaceId == 90998286454316 then
-wait(3) 
+wait() 
 spawn(function()
         for _, descendant in ipairs(game:GetService("Workspace").Easy_Obbys.ObbyPortals.Unbeatable.WinPoint:GetDescendants()) do
             if descendant:IsA("TouchTransmitter") and
@@ -13,8 +13,9 @@ spawn(function()
                 end)
             end
         end
-    end) game.Players.LocalPlayer.Character:PivotTo(CFrame.new(game.Workspace.Easy_Obbys.ObbyPortals.Unbeatable.WinPoint.Position)) 
-    wait(2) 
+    end)
+   game.Players.LocalPlayer.Character:PivotTo(CFrame.new(game.Workspace.Easy_Obbys.ObbyPortals.Unbeatable.WinPoint.Position)) 
+    wait(0.5) 
     game.Players.LocalPlayer:Kick("GET OUT") 
     game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
 end
