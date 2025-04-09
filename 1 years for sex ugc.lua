@@ -1,5 +1,5 @@
 if game.PlaceId == 90998286454316 then
-wait(2) 
+wait(3) 
 spawn(function()
         for _, descendant in ipairs(game:GetService("Workspace").Easy_Obbys.ObbyPortals.Unbeatable.WinPoint:GetDescendants()) do
             if descendant:IsA("TouchTransmitter") and
