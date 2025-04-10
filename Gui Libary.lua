@@ -1006,19 +1006,20 @@ function DeltaLib:CreateWindow(title, size)
                 return SliderFunctions
             end
             
-            -- Dropdown Creation Function - Fixed dropdown menu with error handling
-            -- Dropdown Creation Function - Updated with FluxusUI-inspired implementation
-function Section:AddDropdown(dropdownText, options, default, callback)
+            function Section:AddDropdown(dropdownText, options, default, callback)
+    local DropdownFunctions = {}
     options = options or {}
-    default = default or options[1]
+    default = default or options[1] or ""
     callback = callback or function() end
-    
+
+    -- Create the main dropdown container
     local DropdownContainer = Instance.new("Frame")
     DropdownContainer.Name = "DropdownContainer"
     DropdownContainer.Size = UDim2.new(1, 0, 0, 40)
     DropdownContainer.BackgroundTransparency = 1
     DropdownContainer.Parent = SectionContent
-    
+
+    -- Create the dropdown label
     local DropdownLabel = Instance.new("TextLabel")
     DropdownLabel.Name = "DropdownLabel"
     DropdownLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -1029,8 +1030,13 @@ function Section:AddDropdown(dropdownText, options, default, callback)
     DropdownLabel.Font = Enum.Font.Gotham
     DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
     DropdownLabel.Parent = DropdownContainer
-    
-    -- Main dropdown button with textbox for selected value
+
+    -- Register for text scaling if function exists
+    if RegisterTextElement then
+        RegisterTextElement(DropdownLabel)
+    end
+
+    -- Create the main dropdown button
     local DropdownButton = Instance.new("TextButton")
     DropdownButton.Name = "DropdownButton"
     DropdownButton.Size = UDim2.new(1, 0, 0, 25)
@@ -1038,14 +1044,21 @@ function Section:AddDropdown(dropdownText, options, default, callback)
     DropdownButton.BackgroundColor3 = Colors.DarkBackground
     DropdownButton.BorderSizePixel = 0
     DropdownButton.Text = ""
-    DropdownButton.ClipsDescendants = true
     DropdownButton.Parent = DropdownContainer
-    
+
+    -- Add rounded corners to the dropdown button
     local DropdownButtonCorner = Instance.new("UICorner")
     DropdownButtonCorner.CornerRadius = UDim.new(0, 4)
     DropdownButtonCorner.Parent = DropdownButton
-    
-    -- Create a textbox for the selected value
+
+    -- Add a stroke to the dropdown button
+    local DropdownButtonStroke = Instance.new("UIStroke")
+    DropdownButtonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DropdownButtonStroke.Color = Colors.Border
+    DropdownButtonStroke.Thickness = 1
+    DropdownButtonStroke.Parent = DropdownButton
+
+    -- Create the textbox for displaying the selected value
     local SelectedTextBox = Instance.new("TextBox")
     SelectedTextBox.Name = "SelectedTextBox"
     SelectedTextBox.Size = UDim2.new(1, -50, 1, 0)
@@ -1060,8 +1073,13 @@ function Section:AddDropdown(dropdownText, options, default, callback)
     SelectedTextBox.ClearTextOnFocus = false
     SelectedTextBox.TextEditable = false
     SelectedTextBox.Parent = DropdownButton
-    
-    -- Dropdown toggle arrow
+
+    -- Register for text scaling if function exists
+    if RegisterTextElement then
+        RegisterTextElement(SelectedTextBox)
+    end
+
+    -- Create the dropdown arrow icon
     local DropdownArrow = Instance.new("ImageLabel")
     DropdownArrow.Name = "DropdownArrow"
     DropdownArrow.Size = UDim2.new(0, 20, 0, 20)
@@ -1071,98 +1089,143 @@ function Section:AddDropdown(dropdownText, options, default, callback)
     DropdownArrow.ImageColor3 = Colors.NeonRed
     DropdownArrow.Rotation = 270
     DropdownArrow.Parent = DropdownButton
-    
-    -- Dropdown options container
-    local DropdownOptionsContainer = Instance.new("Frame")
-    DropdownOptionsContainer.Name = "DropdownOptionsContainer"
-    DropdownOptionsContainer.Size = UDim2.new(1, 0, 0, 0)
-    DropdownOptionsContainer.Position = UDim2.new(0, 0, 1, 0)
-    DropdownOptionsContainer.BackgroundTransparency = 1
-    DropdownOptionsContainer.ClipsDescendants = true
-    DropdownOptionsContainer.Parent = DropdownButton
-    
+
+    -- Create a separate dropdown list container (not inside the button)
+    local DropdownList = Instance.new("Frame")
+    DropdownList.Name = "DropdownList"
+    DropdownList.Size = UDim2.new(1, 0, 0, 0) -- Start with zero height
+    DropdownList.Position = UDim2.new(0, 0, 0, 45) -- Position below the button
+    DropdownList.BackgroundColor3 = Colors.DarkBackground
+    DropdownList.BorderSizePixel = 0
+    DropdownList.Visible = false -- Start hidden
+    DropdownList.ZIndex = 100 -- Ensure it appears above other elements
+    DropdownList.Parent = DropdownContainer
+
+    -- Add rounded corners to the dropdown list
+    local DropdownListCorner = Instance.new("UICorner")
+    DropdownListCorner.CornerRadius = UDim.new(0, 4)
+    DropdownListCorner.Parent = DropdownList
+
+    -- Add a stroke to the dropdown list
+    local DropdownListStroke = Instance.new("UIStroke")
+    DropdownListStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DropdownListStroke.Color = Colors.NeonRed
+    DropdownListStroke.Thickness = 1
+    DropdownListStroke.Parent = DropdownList
+
+    -- Create the scrolling frame for options
     local DropdownScrollFrame = Instance.new("ScrollingFrame")
     DropdownScrollFrame.Name = "DropdownScrollFrame"
-    DropdownScrollFrame.Size = UDim2.new(1, -4, 1, 0)
-    DropdownScrollFrame.Position = UDim2.new(0, 2, 0, 0)
+    DropdownScrollFrame.Size = UDim2.new(1, -10, 1, -10)
+    DropdownScrollFrame.Position = UDim2.new(0, 5, 0, 5)
     DropdownScrollFrame.BackgroundTransparency = 1
     DropdownScrollFrame.BorderSizePixel = 0
     DropdownScrollFrame.ScrollBarThickness = 4
     DropdownScrollFrame.ScrollBarImageColor3 = Colors.NeonRed
-    DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    DropdownScrollFrame.Parent = DropdownOptionsContainer
-    
+    DropdownScrollFrame.BottomImage = ""
+    DropdownScrollFrame.TopImage = ""
+    DropdownScrollFrame.ZIndex = 101
+    DropdownScrollFrame.Parent = DropdownList
+
+    -- Add layout for the options
     local DropdownOptionsLayout = Instance.new("UIListLayout")
     DropdownOptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     DropdownOptionsLayout.Padding = UDim.new(0, 5)
     DropdownOptionsLayout.Parent = DropdownScrollFrame
-    
+
+    -- Add padding for the options
     local DropdownOptionsPadding = Instance.new("UIPadding")
     DropdownOptionsPadding.PaddingLeft = UDim.new(0, 5)
     DropdownOptionsPadding.PaddingRight = UDim.new(0, 5)
     DropdownOptionsPadding.PaddingTop = UDim.new(0, 5)
     DropdownOptionsPadding.PaddingBottom = UDim.new(0, 5)
     DropdownOptionsPadding.Parent = DropdownScrollFrame
-    
+
     -- Track dropdown state
     local isOpen = false
-    
-    -- Toggle dropdown function
+    local isAnimating = false
+
+    -- Function to toggle the dropdown
     local function ToggleDropdown()
+        if isAnimating then return end
+        isAnimating = true
         isOpen = not isOpen
         
         -- Animate the dropdown arrow
-        TweenService:Create(DropdownArrow, TweenInfo.new(0.5), {
+        TweenService:Create(DropdownArrow, TweenInfo.new(0.3), {
             Rotation = isOpen and 90 or 270
         }):Play()
         
-        -- Animate the dropdown container
+        -- Animate the dropdown button stroke
+        TweenService:Create(DropdownButtonStroke, TweenInfo.new(0.3), {
+            Color = isOpen and Colors.NeonRed or Colors.Border
+        }):Play()
+        
+        -- Show/hide and animate the dropdown list
         if isOpen then
-            -- Calculate height based on number of options (max 120px)
-            local optionsHeight = math.min(#options * 30 + 10, 120)
-            DropdownOptionsContainer:TweenSize(
-                UDim2.new(1, 0, 0, optionsHeight),
-                Enum.EasingDirection.Out,
-                Enum.EasingStyle.Quart,
-                0.5,
-                true
+            -- Make the list visible first
+            DropdownList.Visible = true
+            
+            -- Calculate height based on number of options (max 150px)
+            local optionsHeight = math.min(#options * 30 + 10, 150)
+            
+            -- Animate the list size
+            local listTween = TweenService:Create(
+                DropdownList, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
+                {Size = UDim2.new(1, 0, 0, optionsHeight)}
             )
-            DropdownButton:TweenSize(
-                UDim2.new(1, 0, 0, 25 + optionsHeight),
-                Enum.EasingDirection.Out,
-                Enum.EasingStyle.Quart,
-                0.5,
-                true
-            )
+            
+            listTween:Play()
+            
+            -- Update canvas size for scrolling
+            DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionsLayout.AbsoluteContentSize.Y + 10)
+            
+            listTween.Completed:Connect(function()
+                isAnimating = false
+                
+                -- Update section size after animation
+                if SectionContainer and bg then
+                    SectionContainer.Size = UDim2.new(1, 0, 0, sectionSize(bg))
+                    bg.Size = UDim2.new(1, 0, 0, sectionSize(bg) + 30)
+                end
+            end)
         else
-            DropdownOptionsContainer:TweenSize(
-                UDim2.new(1, 0, 0, 0),
-                Enum.EasingDirection.Out,
-                Enum.EasingStyle.Quart,
-                0.5,
-                true
+            -- Animate closing the list
+            local listTween = TweenService:Create(
+                DropdownList, 
+                TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
+                {Size = UDim2.new(1, 0, 0, 0)}
             )
-            DropdownButton:TweenSize(
-                UDim2.new(1, 0, 0, 25),
-                Enum.EasingDirection.Out,
-                Enum.EasingStyle.Quart,
-                0.5,
-                true
-            )
+            
+            listTween:Play()
+            
+            listTween.Completed:Connect(function()
+                DropdownList.Visible = false
+                isAnimating = false
+                
+                -- Update section size after animation
+                if SectionContainer and bg then
+                    SectionContainer.Size = UDim2.new(1, 0, 0, sectionSize(bg))
+                    bg.Size = UDim2.new(1, 0, 0, sectionSize(bg) + 30)
+                end
+            end)
         end
     end
-    
-    -- Create option buttons
+
+    -- Store option buttons
     local OptionButtons = {}
-    
+
+    -- Function to create an option button
     local function CreateOptionButton(option, index)
         local OptionButton = Instance.new("TextButton")
-        OptionButton.Name = option.."Option"
+        OptionButton.Name = "Option_" .. option
         OptionButton.Size = UDim2.new(1, 0, 0, 25)
         OptionButton.BackgroundColor3 = Colors.DarkBackground
         OptionButton.BorderSizePixel = 0
         OptionButton.Text = ""
         OptionButton.LayoutOrder = index
+        OptionButton.ZIndex = 102
         OptionButton.Parent = DropdownScrollFrame
         
         local OptionButtonCorner = Instance.new("UICorner")
@@ -1179,9 +1242,15 @@ function Section:AddDropdown(dropdownText, options, default, callback)
         OptionText.TextSize = 14
         OptionText.Font = Enum.Font.Gotham
         OptionText.TextXAlignment = Enum.TextXAlignment.Left
+        OptionText.ZIndex = 103
         OptionText.Parent = OptionButton
         
-        -- Hover effect
+        -- Register for text scaling if function exists
+        if RegisterTextElement then
+            RegisterTextElement(OptionText)
+        end
+        
+        -- Add hover effects
         OptionButton.MouseEnter:Connect(function()
             TweenService:Create(OptionButton, TweenInfo.new(0.2), {
                 BackgroundColor3 = Colors.NeonRed
@@ -1194,75 +1263,101 @@ function Section:AddDropdown(dropdownText, options, default, callback)
             }):Play()
         end)
         
-        -- Select option
+        -- Handle option selection
         OptionButton.MouseButton1Click:Connect(function()
             SelectedTextBox.Text = option
             ToggleDropdown()
             callback(option)
+            
+            -- Visual feedback for selection
+            TweenService:Create(OptionText, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true), {
+                TextColor3 = Colors.NeonRed
+            }):Play()
         end)
         
         return OptionButton
     end
-    
+
     -- Create initial options
     for i, option in ipairs(options) do
         local optionButton = CreateOptionButton(option, i)
         table.insert(OptionButtons, optionButton)
-        
-        -- Update canvas size
-        DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionsLayout.AbsoluteContentSize.Y + 10)
     end
-    
+
     -- Toggle dropdown when clicking the button
     DropdownButton.MouseButton1Click:Connect(ToggleDropdown)
-    
-    -- Close dropdown when clicking elsewhere
-    UserInputService.InputBegan:Connect(function(input)
+
+    -- Create a separate connection for global click detection
+    local globalClickConnection
+    globalClickConnection = UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not isOpen then return end
+            
             local mousePos = UserInputService:GetMouseLocation()
-            if isOpen and not (mousePos.X >= DropdownButton.AbsolutePosition.X and 
-                              mousePos.X <= DropdownButton.AbsolutePosition.X + DropdownButton.AbsoluteSize.X and
-                              mousePos.Y >= DropdownButton.AbsolutePosition.Y and 
-                              mousePos.Y <= DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y) then
-                isOpen = false
-                DropdownOptionsContainer:TweenSize(
-                    UDim2.new(1, 0, 0, 0),
-                    Enum.EasingDirection.Out,
-                    Enum.EasingStyle.Quart,
-                    0.5,
-                    true
-                )
-                DropdownButton:TweenSize(
-                    UDim2.new(1, 0, 0, 25),
-                    Enum.EasingDirection.Out,
-                    Enum.EasingStyle.Quart,
-                    0.5,
-                    true
-                )
-                TweenService:Create(DropdownArrow, TweenInfo.new(0.5), {
-                    Rotation = 270
-                }):Play()
+            
+            -- Check if click is inside dropdown button
+            local inDropdownButton = (mousePos.X >= DropdownButton.AbsolutePosition.X and 
+                                     mousePos.X <= DropdownButton.AbsolutePosition.X + DropdownButton.AbsoluteSize.X and
+                                     mousePos.Y >= DropdownButton.AbsolutePosition.Y and 
+                                     mousePos.Y <= DropdownButton.AbsolutePosition.Y + DropdownButton.AbsoluteSize.Y)
+            
+            -- Check if click is inside dropdown list
+            local inDropdownList = false
+            if DropdownList.Visible then
+                inDropdownList = (mousePos.X >= DropdownList.AbsolutePosition.X and 
+                                 mousePos.X <= DropdownList.AbsolutePosition.X + DropdownList.AbsoluteSize.X and
+                                 mousePos.Y >= DropdownList.AbsolutePosition.Y and 
+                                 mousePos.Y <= DropdownList.AbsolutePosition.Y + DropdownList.AbsoluteSize.Y)
+            end
+            
+            -- Close dropdown if click is outside both dropdown button and list
+            if not inDropdownButton and not inDropdownList and not isAnimating then
+                ToggleDropdown()
             end
         end
     end)
-    
-    -- Return functions for the dropdown
-    local DropdownFunctions = {}
-    
+
+    -- Clean up connection when dropdown is destroyed
+    DropdownContainer.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            globalClickConnection:Disconnect()
+        end
+    end)
+
+    -- Add hover effect for the dropdown button
+    DropdownButton.MouseEnter:Connect(function()
+        if not isOpen then
+            TweenService:Create(DropdownButtonStroke, TweenInfo.new(0.3), {
+                Color = Color3.fromRGB(100, 100, 100)
+            }):Play()
+        end
+    end)
+
+    DropdownButton.MouseLeave:Connect(function()
+        if not isOpen then
+            TweenService:Create(DropdownButtonStroke, TweenInfo.new(0.3), {
+                Color = Colors.Border
+            }):Play()
+        end
+    end)
+
+    -- Function to set the dropdown value
     function DropdownFunctions:SetValue(value)
         if table.find(options, value) then
             SelectedTextBox.Text = value
             callback(value)
         end
     end
-    
+
+    -- Function to get the current dropdown value
     function DropdownFunctions:GetValue()
         return SelectedTextBox.Text
     end
-    
+
+    -- Function to refresh the dropdown options
     function DropdownFunctions:Refresh(newOptions, newDefault)
         options = newOptions or options
-        default = newDefault or options[1]
+        default = newDefault or (options[1] or "")
         
         -- Clear existing options
         for _, button in ipairs(OptionButtons) do
@@ -1270,21 +1365,38 @@ function Section:AddDropdown(dropdownText, options, default, callback)
         end
         
         OptionButtons = {}
-        DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
         
         -- Create new options
         for i, option in ipairs(options) do
             local optionButton = CreateOptionButton(option, i)
             table.insert(OptionButtons, optionButton)
-            
-            -- Update canvas size
-            DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionsLayout.AbsoluteContentSize.Y + 10)
         end
+        
+        -- Update canvas size
+        DropdownScrollFrame.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionsLayout.AbsoluteContentSize.Y + 10)
         
         -- Set default value
         SelectedTextBox.Text = default
+        
+        -- If dropdown is open, update its size
+        if isOpen then
+            local optionsHeight = math.min(#options * 30 + 10, 150)
+            DropdownList.Size = UDim2.new(1, 0, 0, optionsHeight)
+        end
+        
+        -- Update section size
+        if SectionContainer and bg then
+            SectionContainer.Size = UDim2.new(1, 0, 0, sectionSize(bg))
+            bg.Size = UDim2.new(1, 0, 0, sectionSize(bg) + 30)
+        end
     end
-    
+
+    -- Update section size
+    if SectionContainer and bg then
+        SectionContainer.Size = UDim2.new(1, 0, 0, sectionSize(bg))
+        bg.Size = UDim2.new(1, 0, 0, sectionSize(bg) + 30)
+    end
+
     return DropdownFunctions
 end
 
