@@ -1,21 +1,30 @@
 if game.PlaceId == 90998286454316 then
-spawn(function()
-        for _, descendant in ipairs(game:GetService("Workspace").Easy_Obbys.ObbyPortals.Unbeatable.WinPoint:GetDescendants()) do
-            if descendant:IsA("TouchTransmitter") and
-                    game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.PrimaryPart then
-                task.spawn(function()
-                    firetouchinterest(descendant:FindFirstAncestorWhichIsA("Part"),
-                        game.Players.LocalPlayer.Character.PrimaryPart, 1)
-                    task.wait()
-                    firetouchinterest(descendant:FindFirstAncestorWhichIsA("Part"),
-                        game.Players.LocalPlayer.Character.PrimaryPart, 0)
-                end)
+    coroutine.wrap(function()
+        local a = game.Players.LocalPlayer
+        local b = a.Character or a.CharacterAdded:Wait()
+        local c = b:WaitForChild("HumanoidRootPart")
+        local d = game:GetService("Workspace").Easy_Obbys.ObbyPortals.Unbeatable.WinPoint
+
+        for _, v in ipairs(d:GetDescendants()) do
+            if v:IsA("TouchTransmitter") then
+                coroutine.wrap(function()
+                    local part = v:FindFirstAncestorWhichIsA("Part")
+                    if part and c then
+                        firetouchinterest(part, c, 1)
+                        task.wait()
+                        firetouchinterest(part, c, 0)
+                    end
+                end)()
             end
         end
-    end)
-game.Players.LocalPlayer.Character:PivotTo(CFrame.new(Vector3.new(-336, 49, 552))) game.Players.LocalPlayer.Character:PivotTo(CFrame.new(game.Workspace.Easy_Obbys.ObbyPortals.Unbeatable.WinPoint.Position)) 
-wait(2) 
-    game.Players.LocalPlayer:Kick("GET OUT") 
-wait(0.6) 
-    game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+
+        b:PivotTo(CFrame.new(-336, 49, 552))
+        task.wait(0.1)
+        b:PivotTo(CFrame.new(d.Position))
+        
+        task.wait(2)
+        a:Kick("GET OUT")
+        task.wait(0.6)
+        game:GetService("TeleportService"):Teleport(game.PlaceId, a)
+    end)()
 end
