@@ -11,8 +11,8 @@ _G.Configuration = {
     ["Rendering Enabled"] = false,
 
     ["Auto-Buy Useful Items"] = true,
-    ["Auto-Buy Interval"] = 10,
-    ["Auto-Buy Stock Threshold"] = 5,
+    ["Auto-Buy Interval"] = 0,
+    ["Auto-Buy Stock Threshold"] = 0,
 
     ["Ping User On Alert"] = true,
     ["Ping User ID"] = "968865199920644146",
@@ -263,11 +263,6 @@ if GetConfigValue("Auto-Buy Useful Items") then
                     local current = GetItemStock(stockData, name)
                     if current < stockThreshold then
                         GameEvents:FindFirstChild(eventName):FireServer(name)
-                        table.insert(fields, {
-                            name = "Auto-Bought",
-                            value = `${name} (Stock: ${current})`,
-                            inline = false
-                        })
                     end
                 end
             end
@@ -277,9 +272,9 @@ if GetConfigValue("Auto-Buy Useful Items") then
             tryBuy(nightItemList, "BuyNightEventShopStock")
             tryBuy(eventShopItemList, "BuyEventShopStock")
 
-            if #fields > 0 then
-                WebhookSend("SeedsAndGears", fields)
-            end
+            -- if #fields > 0 then
+               --  WebhookSend("SeedsAndGears", fields)
+          --   end
 
             task.wait(interval)
         end
