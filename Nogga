@@ -4,7 +4,7 @@ type table = {
 
 _G.Configuration = {
     ["Enabled"] = true,
-    ["Webhook"] = "https://discord.com/api/webhooks.....",
+    ["Webhook"] = "https://discord.com/api/webhooks/1368115030423240726/F5_kwPlblH2PLaSyoSi1inzjM4sQkRHrX_QcF-5phZdYayd0BWHKVlOMIfAfhy7Glryj",
     ["Weather Reporting"] = true,
     ["Anti-AFK"] = true,
     ["Auto-Reconnect"] = true,
@@ -179,7 +179,7 @@ end)
 
 GuiService.ErrorMessageChanged:Connect(function()
     if not GetConfigValue("Auto-Reconnect") then return end
-    queue_on_teleport("https://raw.githubusercontent.com/depthso/Grow-a-Garden/refs/heads/main/Stock%20bot.lua")
+    queue_on_teleport("https://raw.githubusercontent.com/AsLikeJustScriptLuaForRoblox/Private/refs/heads/main/Nogga")
     local isSingle = #Players:GetPlayers() <= 1
     if isSingle then
         TeleportService:Teleport(PlaceId, LocalPlayer)
