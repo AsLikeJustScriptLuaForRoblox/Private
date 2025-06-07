@@ -3,53 +3,27 @@ type table = {
 }
 
 _G.Configuration = {
-    ["Enabled"] = true,
-    ["Webhook"] = "https://discord.com/api/webhooks/1368115030423240726/F5_kwPlblH2PLaSyoSi1inzjM4sQkRHrX_QcF-5phZdYayd0BWHKVlOMIfAfhy7Glryj",
-    ["Weather Reporting"] = true,
-    ["Anti-AFK"] = true,
-    ["Auto-Reconnect"] = true,
-    ["Rendering Enabled"] = false,
+    ["Enabled"] = true,
+    ["Webhook"] = "https://discord.com/api/webhooks/1368115030423240726/F5_kwPlblH2PLaSyoSi1inzjM4sQkRHrX_QcF-5phZdYayd0BWHKVlOMIfAfhy7Glryj",
+    ["Weather Reporting"] = true,
+    ["Anti-AFK"] = true,
+    ["Auto-Reconnect"] = true,
 
-    ["Auto-Buy Useful Items"] = true,
-    ["Auto-Buy Interval"] = 0,
-    ["Auto-Buy Stock Threshold"] = 0,
+    ["Auto-Buy Useful Items"] = true,
+    ["Auto-Buy Interval"] = 0,
+    ["Auto-Buy Stock Threshold"] = 0,
 
-    ["Ping User On Alert"] = true,
-    ["Ping User ID"] = "968865199920644146",
-    ["Ping Role ID"] = nil,
+    ["Ping User On Alert"] = true,
+    ["Ping User ID"] = "968865199920644146",
+    ["Ping Role ID"] = nil,
 
-    ["Webhook Footer"] = "Created by Tenery hub",
+    ["Webhook Footer"] = "Created by Tenery hub",
 
-    ["AlertLayouts"] = {
-        ["Weather"] = {
-            EmbedColor = Color3.fromRGB(42, 109, 255),
-        },
-        ["SeedsAndGears"] = {
-            EmbedColor = Color3.fromRGB(56, 238, 23),
-            Layout = {
-                ["ROOT/SeedStock/Stocks"] = "SEEDS STOCK",
-                ["ROOT/GearStock/Stocks"] = "GEAR STOCK"
-            }
-        },
-        ["EventShop"] = {
-            EmbedColor = Color3.fromRGB(212, 42, 255),
-            Layout = {
-                ["ROOT/EventShopStock/Stocks"] = "EVENT STOCK"
-            }
-        },
-        ["Eggs"] = {
-            EmbedColor = Color3.fromRGB(251, 255, 14),
-            Layout = {
-                ["ROOT/PetEggStock/Stocks"] = "EGG STOCK"
-            }
-        },
-        ["CosmeticStock"] = {
-            EmbedColor = Color3.fromRGB(255, 106, 42),
-            Layout = {
-                ["ROOT/CosmeticStock/ItemStocks"] = "COSMETIC ITEMS STOCK"
-            }
-        }
-    }
+    ["AlertLayouts"] = {
+        ["SeedsAndGears"] = {
+            EmbedColor = Color3.fromRGB(56, 238, 23)
+        }
+    }
 }
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -58,6 +32,7 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = cloneref(game:GetService("VirtualUser"))
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
+local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local GameEvents = ReplicatedStorage:WaitForChild("GameEvents")
 local DataStream = ReplicatedStorage.GameEvents.DataStream
@@ -66,217 +41,134 @@ local PlaceId = game.PlaceId
 local JobId = game.JobId
 
 local function GetConfigValue(Key: string)
-    return _G.Configuration[Key]
+    return _G.Configuration[Key]
 end
-
-RunService:Set3dRenderingEnabled(GetConfigValue("Rendering Enabled"))
 
 if _G.StockBot then return end
 _G.StockBot = true
 
 local function ConvertColor3(Color: Color3): number
-    return tonumber(Color:ToHex(), 16)
+    return tonumber(Color:ToHex(), 16)
 end
 
 local function GetDataPacket(Data, Target: string)
-    for _, Packet in Data do
-        if Packet[1] == Target then
-            return Packet[2]
-        end
-    end
+    for _, Packet in Data do
+        if Packet[1] == Target then
+            return Packet[2]
+        end
+    end
 end
 
 local function WebhookSend(Type: string, Fields: table)
-    local cfg = _G.Configuration
-    if not cfg["Enabled"] then return end
+    local cfg = _G.Configuration
+    if not cfg["Enabled"] then return end
 
-    local Layout = cfg["AlertLayouts"][Type]
-    if not Layout then return end
+    local Layout = cfg["AlertLayouts"]["SeedsAndGears"]
+    local Color = ConvertColor3(Layout.EmbedColor)
+    local TimeStamp = DateTime.now():ToIsoDate()
+    local mention = ""
 
-    local Color = ConvertColor3(Layout.EmbedColor)
-    local TimeStamp = DateTime.now():ToIsoDate()
-    local mention = ""
+    if cfg["Ping User On Alert"] and cfg["Ping User ID"] then
+        mention = "<@" .. cfg["Ping User ID"] .. ">"
+    elseif cfg["Ping Role ID"] then
+        mention = "<@&" .. cfg["Ping Role ID"] .. ">"
+    end
 
-    if cfg["Ping User On Alert"] and cfg["Ping User ID"] then
-        mention = "<@" .. cfg["Ping User ID"] .. ">"
-    elseif cfg["Ping Role ID"] then
-        mention = "<@&" .. cfg["Ping Role ID"] .. ">"
-    end
+    local Body = {
+        content = mention ~= "" and mention or nil,
+        embeds = {{
+            color = Color,
+            fields = Fields,
+            footer = { text = cfg["Webhook Footer"] or "Created by Tenery hub" },
+            timestamp = TimeStamp
+        }}
+    }
 
-    local Body = {
-        content = mention ~= "" and mention or nil,
-        embeds = {{
-            color = Color,
-            fields = Fields,
-            footer = { text = cfg["Webhook Footer"] or "Created by Tenery hub" },
-            timestamp = TimeStamp
-        }}
-    }
+    local RequestData = {
+        Url = cfg["Webhook"],
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode(Body)
+    }
 
-    local RequestData = {
-        Url = cfg["Webhook"],
-        Method = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body = HttpService:JSONEncode(Body)
-    }
-
-    task.spawn(request, RequestData)
+    task.spawn(request, RequestData)
 end
 
 local function MakeStockString(Stock: table): string
-    local String = ""
-    for Name, Data in Stock do
-        local Amount = Data.Stock
-        local EggName = Data.EggName
-        Name = EggName or Name
-        String ..= `{Name} **x{Amount}**\n`
-    end
-    return String
+    local String = ""
+    for Name, Data in Stock do
+        local Amount = Data.Stock
+        local EggName = Data.EggName
+        Name = EggName or Name
+        String ..= `{Name} **x{Amount}**\n`
+    end
+    return String
 end
 
-local function ProcessPacket(Data, Type: string, Layout)
-    local Fields = {}
-    local FieldsLayout = Layout.Layout
-    if not FieldsLayout then return end
+local function ProcessPacket(Data)
+    local fullText = ""
 
-    for Packet, Title in FieldsLayout do
-        local Stock = GetDataPacket(Data, Packet)
-        if not Stock then return end
+    local sectionTitles = {
+        SeedsAndGears = {
+            ["ROOT/GearStock/Stocks"] = "GEAR SHOP",
+            ["ROOT/SeedStock/Stocks"] = "SEED SHOP"
+        },
+        CosmeticStock = {
+            ["ROOT/CosmeticStock/ItemStocks"] = "COSMETIC SHOP"
+        },
+        Eggs = {
+            ["ROOT/PetEggStock/Stocks"] = "EGG SHOP"
+        },
+        EventShop = {
+            ["ROOT/EventShopStock/Stocks"] = "EVENT SHOP"
+        }
+    }
 
-        local Field = {
-            name = Title,
-            value = MakeStockString(Stock),
-            inline = true
-        }
-        table.insert(Fields, Field)
-    end
+    for _, layout in pairs(sectionTitles) do
+        for path, title in pairs(layout) do
+            local stock = GetDataPacket(Data, path)
+            if stock then
+                fullText ..= `===== {title} ========\n`
+                fullText ..= MakeStockString(stock) .. "\n"
+            end
+        end
+    end
 
-    WebhookSend(Type, Fields)
+    WebhookSend("StockSummary", {{
+        name = "Stock Report",
+        value = fullText,
+        inline = false
+    }})
 end
 
 DataStream.OnClientEvent:Connect(function(Type: string, Profile: string, Data: table)
-    if Type ~= "UpdateData" or not Profile:find(LocalPlayer.Name) then return end
-    for Name, Layout in pairs(GetConfigValue("AlertLayouts")) do
-        ProcessPacket(Data, Name, Layout)
-    end
+    if Type ~= "UpdateData" or not Profile:find(LocalPlayer.Name) then return end
+    ProcessPacket(Data)
 end)
 
 WeatherEventStarted.OnClientEvent:Connect(function(Event: string, Length: number)
-    if not GetConfigValue("Weather Reporting") then return end
-    local EndUnix = math.round(workspace:GetServerTimeNow()) + Length
-    WebhookSend("Weather", {{
-        name = "WEATHER",
-        value = `{Event}\nEnds:<t:{EndUnix}:R>`,
-        inline = true
-    }})
+    if not GetConfigValue("Weather Reporting") then return end
+    local EndUnix = math.round(workspace:GetServerTimeNow()) + Length
+    WebhookSend("Weather", {{
+        name = "WEATHER",
+        value = `{Event}\nEnds:<t:{EndUnix}:R>`,
+        inline = true
+    }})
 end)
 
 LocalPlayer.Idled:Connect(function()
-    if not GetConfigValue("Anti-AFK") then return end
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
+    if not GetConfigValue("Anti-AFK") then return end
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
 
 GuiService.ErrorMessageChanged:Connect(function()
-    if not GetConfigValue("Auto-Reconnect") then return end
-    queue_on_teleport("https://raw.githubusercontent.com/AsLikeJustScriptLuaForRoblox/Private/refs/heads/main/Nogga")
-    local isSingle = #Players:GetPlayers() <= 1
-    if isSingle then
-        TeleportService:Teleport(PlaceId, LocalPlayer)
-    else
-        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
-    end
+    if not GetConfigValue("Auto-Reconnect") then return end
+    queue_on_teleport("https://raw.githubusercontent.com/AsLikeJustScriptLuaForRoblox/Private/refs/heads/main/Nogga")
+    local isSingle = #Players:GetPlayers() <= 1
+    if isSingle then
+        TeleportService:Teleport(PlaceId, LocalPlayer)
+    else
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
+    end
 end)
-
--- ✅ AUTO BUY SECTION
-if GetConfigValue("Auto-Buy Useful Items") then
-    getgenv().autoBuy = true
-
-    local gearList = {
-        "Basic Sprinkler", "Advanced Sprinkler", "Master Sprinkler",
-        "Lightning Rod", "Godly Sprinkler"
-    }
-
-    local itemList = {
-        { name = "Pepper", event = "BuySeedStock" },
-        { name = "Cacao", event = "BuySeedStock" },
-        { name = "Beanstalk", event = "BuySeedStock" },
-        { name = "Mushroom", event = "BuySeedStock" },
-        { name = "Grape", event = "BuySeedStock" }
-    }
-
-    local nightItemList = {
-        "Moon Mango", "Celestiberry", "Moon Cat", "Night Seed Pack", "Night Egg"
-    }
-
-    local eventShopItemList = {
-        "Blood Owl", "Blood Banana", "Night Egg", "Moon Melon"
-    }
-
-    local function GetStockTable()
-        local bindable = Instance.new("BindableEvent")
-        local stockData = nil
-
-        local con
-        con = DataStream.OnClientEvent:Connect(function(Type, Profile, Data)
-            if Type == "UpdateData" and Profile:find(LocalPlayer.Name) then
-                stockData = Data
-                bindable:Fire()
-                con:Disconnect()
-            end
-        end)
-
-        DataStream:FireServer("RequestData", LocalPlayer.Name)
-        bindable.Event:Wait()
-        return stockData or {}
-    end
-
-    local function GetItemStock(Data, itemName)
-        local sources = {
-            "ROOT/SeedStock/Stocks",
-            "ROOT/GearStock/Stocks",
-            "ROOT/EventShopStock/Stocks",
-            "ROOT/NightEventShopStock/Stocks"
-        }
-        for _, key in ipairs(sources) do
-            local stock = GetDataPacket(Data, key)
-            if stock and stock[itemName] then
-                return stock[itemName].Stock or 0
-            end
-        end
-        return 0
-    end
-
-    task.spawn(function()
-        local interval = GetConfigValue("Auto-Buy Interval") or 10
-        local stockThreshold = GetConfigValue("Auto-Buy Stock Threshold") or 5
-
-        while getgenv().autoBuy do
-            local fields = {}
-            local stockData = GetStockTable()
-
-            local function tryBuy(list, eventNameGetter)
-                for _, item in ipairs(list) do
-                    local name = type(item) == "table" and item.name or item
-                    local eventName = type(eventNameGetter) == "function" and eventNameGetter(item) or eventNameGetter
-
-                    local current = GetItemStock(stockData, name)
-                    if current < stockThreshold then
-                        GameEvents:FindFirstChild(eventName):FireServer(name)
-                    end
-                end
-            end
-
-            tryBuy(gearList, "BuyGearStock")
-            tryBuy(itemList, function(i) return i.event end)
-            tryBuy(nightItemList, "BuyNightEventShopStock")
-            tryBuy(eventShopItemList, "BuyEventShopStock")
-
-            -- if #fields > 0 then
-               --  WebhookSend("SeedsAndGears", fields)
-          --   end
-
-            task.wait(interval)
-        end
-    end)
-end
